@@ -22,6 +22,28 @@ export default function EditBookingModalCompact({ isOpen, onClose, onSave }) {
 
   const futureBookingsCount = 5;
 
+  // Mock data for booking conflicts preview (will be populated from backend in future)
+  const conflictingBookings = [
+    {
+      id: 1,
+      date: '16/01/2026',
+      time: '08:30 - 09:30',
+      type: 'Training Flight',
+      aircraft: 'N123AB',
+      instructor: 'John Smith',
+      conflictType: 'aircraft', // aircraft, instructor, or student
+    },
+    {
+      id: 2,
+      date: '16/01/2026',
+      time: '08:00 - 09:00',
+      type: 'Rental Flight',
+      aircraft: 'N123AC',
+      instructor: 'Cypress Test',
+      conflictType: 'instructor',
+    },
+  ];
+
   const bookingTypes = [
     { id: 'maintenance', label: 'Maintenance' },
     { id: 'training', label: 'Training Flight' },
@@ -236,6 +258,96 @@ export default function EditBookingModalCompact({ isOpen, onClose, onSave }) {
           </div>
           <span className="text-green-700">All validation checks passed</span>
         </div>
+
+        {/* Booking Conflicts Preview Section */}
+        {conflictingBookings.length > 0 && (
+          <details className="mt-4 group">
+            <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-orange-600 hover:text-orange-700">
+              <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Potential conflicts ({conflictingBookings.length})</span>
+              <span className="text-xs text-orange-500 font-normal ml-1">— Preview</span>
+            </summary>
+            <div className="mt-3 space-y-2 pl-6">
+              <p className="text-xs text-gray-500 mb-2">
+                The following existing bookings may conflict with your changes:
+              </p>
+              {conflictingBookings.map((conflict) => (
+                <div
+                  key={conflict.id}
+                  className="p-3 bg-orange-50 rounded-lg border border-orange-200"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium text-gray-900">{conflict.type}</span>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                          conflict.conflictType === 'aircraft'
+                            ? 'bg-blue-100 text-blue-700'
+                            : conflict.conflictType === 'instructor'
+                            ? 'bg-purple-100 text-purple-700'
+                            : 'bg-teal-100 text-teal-700'
+                        }`}>
+                          {conflict.conflictType === 'aircraft' && (
+                            <svg className="w-3 h-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3l14 9-14 9V3z" />
+                            </svg>
+                          )}
+                          {conflict.conflictType === 'instructor' && (
+                            <svg className="w-3 h-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                          )}
+                          {conflict.conflictType === 'student' && (
+                            <svg className="w-3 h-3 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                          )}
+                          {conflict.conflictType}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-gray-600">
+                        <span className="flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          {conflict.date}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {conflict.time}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3l14 9-14 9V3z" />
+                          </svg>
+                          {conflict.aircraft}
+                        </span>
+                      </div>
+                      {conflict.instructor && (
+                        <div className="mt-1 text-xs text-gray-500">
+                          Instructor: {conflict.instructor}
+                        </div>
+                      )}
+                    </div>
+                    <button className="text-xs text-orange-600 hover:text-orange-700 font-medium">
+                      View
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <p className="text-xs text-gray-400 italic mt-2">
+                Conflict detection will be fully implemented in a future update.
+              </p>
+            </div>
+          </details>
+        )}
 
         {/* Action Buttons */}
         <div className="mt-6 flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
