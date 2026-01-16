@@ -86,7 +86,7 @@ export default function EditBookingModalSplit({ isOpen, onClose, onSave }) {
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  {currentBookingIndex + 1}/{totalBookingsInSeries}
+                  Recurring
                 </span>
               </div>
               <p className="text-xs text-gray-500 mt-0.5">{formData.startDate} • {formData.startTime}</p>
@@ -312,7 +312,7 @@ export default function EditBookingModalSplit({ isOpen, onClose, onSave }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <div>
-                <div className="text-sm font-medium text-amber-800">Changes apply to {futureBookingsCount} bookings</div>
+                <div className="text-sm font-medium text-amber-800">Bulk edit mode</div>
                 <div className="text-xs text-amber-700 mt-0.5">This action cannot be undone</div>
               </div>
             </div>
@@ -320,14 +320,9 @@ export default function EditBookingModalSplit({ isOpen, onClose, onSave }) {
 
           {/* Affected Bookings Header */}
           <div className="px-5 pt-4 pb-2">
-            <div className="flex items-center justify-between">
-              <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                {editScope === 'single' ? 'Booking to Update' : 'Bookings to Update'}
-              </h4>
-              <span className="text-xs text-gray-400">
-                {affectedBookings.length} {affectedBookings.length === 1 ? 'booking' : 'bookings'}
-              </span>
-            </div>
+            <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+              {editScope === 'single' ? 'Booking to Update' : 'Bookings to Update'}
+            </h4>
           </div>
 
           {/* Booking List */}
