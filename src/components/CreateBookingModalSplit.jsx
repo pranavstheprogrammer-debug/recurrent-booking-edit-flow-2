@@ -324,52 +324,30 @@ export default function CreateBookingModalSplit({ isOpen, onClose, onBook }) {
               </div>
             </div>
 
-            {/* Timeline Preview */}
+            {/* Booking Preview */}
             <div className="flex-1 overflow-y-auto p-5">
-              <div className="relative">
-                {/* Timeline Line */}
-                <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-300" />
-
-                {/* Booking Items */}
-                <div className="space-y-4">
-                  {previewBookings.map((booking, index) => (
-                    <div key={booking.id} className="relative flex items-start gap-4 pl-2">
-                      {/* Timeline Dot */}
-                      <div className={`relative z-10 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        booking.status === 'current'
-                          ? 'bg-indigo-500 border-indigo-500'
-                          : 'bg-white border-gray-300'
+              <div className="space-y-3">
+                {previewBookings.map((booking) => (
+                  <div
+                    key={booking.id}
+                    className={`p-3 rounded-lg border transition-all ${
+                      booking.status === 'current'
+                        ? 'bg-indigo-50 border-indigo-200 shadow-sm'
+                        : 'bg-white border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-xs font-medium ${
+                        booking.status === 'current' ? 'text-indigo-600' : 'text-gray-500'
                       }`}>
-                        {booking.status === 'current' && (
-                          <div className="w-2 h-2 bg-white rounded-full" />
-                        )}
-                        {booking.status === 'valid' && (
-                          <svg className="w-3 h-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
-
-                      {/* Booking Card */}
-                      <div className={`flex-1 p-3 rounded-lg border transition-all ${
-                        booking.status === 'current'
-                          ? 'bg-indigo-50 border-indigo-200 shadow-sm'
-                          : 'bg-white border-gray-200 hover:border-gray-300'
-                      }`}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className={`text-xs font-medium ${
-                            booking.status === 'current' ? 'text-indigo-600' : 'text-gray-500'
-                          }`}>
-                            #{booking.id}
-                          </span>
-                          <span className="text-xs text-gray-400">{booking.dayName}</span>
-                        </div>
-                        <div className="text-sm font-medium text-gray-900">{booking.date}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">{booking.time}</div>
-                      </div>
+                        #{booking.id}
+                      </span>
+                      <span className="text-xs text-gray-400">{booking.dayName}</span>
                     </div>
-                  ))}
-                </div>
+                    <div className="text-sm font-medium text-gray-900">{booking.date}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">{booking.time}</div>
+                  </div>
+                ))}
               </div>
             </div>
 
