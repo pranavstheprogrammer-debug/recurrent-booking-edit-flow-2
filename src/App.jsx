@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import EditBookingModal from '@components/EditBookingModal';
 import EditBookingModalCompact from '@components/EditBookingModalCompact';
+import EditBookingModalSplit from '@components/EditBookingModalSplit';
 import CreateBookingModal from '@components/CreateBookingModal';
 import CreateBookingModalSplit from '@components/CreateBookingModalSplit';
 import Toast from '@components/Toast';
 
 const App = () => {
-  const [activeDesign, setActiveDesign] = useState('standard'); // 'standard' or 'compact'
+  const [activeDesign, setActiveDesign] = useState('split'); // 'standard', 'compact', or 'split'
   const [activeCreateDesign, setActiveCreateDesign] = useState('inline'); // 'inline' or 'split'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -112,7 +113,7 @@ const App = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Design Variants</h2>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-3 gap-4">
             {/* Standard Design */}
             <button
               onClick={() => setActiveDesign('standard')}
@@ -128,14 +129,13 @@ const App = () => {
                 }`}>
                   {activeDesign === 'standard' && <div className="w-2 h-2 rounded-full bg-teal-500" />}
                 </div>
-                <h3 className="font-semibold text-gray-900">Standard Design</h3>
+                <h3 className="font-semibold text-gray-900">Standard</h3>
               </div>
               <p className="text-sm text-gray-600 ml-6">
-                Card-style radio buttons for scope selection. Clear visual hierarchy with prominent scope toggle section. Inline confirmation banner appears on save.
+                Card-style radio buttons for scope selection with inline confirmation banner.
               </p>
               <div className="ml-6 mt-2 flex flex-wrap gap-1">
                 <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Spacious</span>
-                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">2-step confirmation</span>
               </div>
             </button>
 
@@ -154,14 +154,39 @@ const App = () => {
                 }`}>
                   {activeDesign === 'compact' && <div className="w-2 h-2 rounded-full bg-teal-500" />}
                 </div>
-                <h3 className="font-semibold text-gray-900">Compact Design</h3>
+                <h3 className="font-semibold text-gray-900">Compact</h3>
               </div>
               <p className="text-sm text-gray-600 ml-6">
-                Segmented control in the header for scope selection. More condensed form layout with collapsible additional options. Direct save without extra confirmation step.
+                Segmented control in header. Condensed form with collapsible options.
               </p>
               <div className="ml-6 mt-2 flex flex-wrap gap-1">
-                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Compact</span>
-                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">1-click save</span>
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Minimal</span>
+              </div>
+            </button>
+
+            {/* Split Panel Design */}
+            <button
+              onClick={() => setActiveDesign('split')}
+              className={`p-4 rounded-lg border-2 text-left transition-all ${
+                activeDesign === 'split'
+                  ? 'border-teal-500 bg-teal-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  activeDesign === 'split' ? 'border-teal-500' : 'border-gray-300'
+                }`}>
+                  {activeDesign === 'split' && <div className="w-2 h-2 rounded-full bg-teal-500" />}
+                </div>
+                <h3 className="font-semibold text-gray-900">Split Panel</h3>
+                <span className="px-1.5 py-0.5 bg-teal-100 text-teal-700 text-xs rounded font-medium">New</span>
+              </div>
+              <p className="text-sm text-gray-600 ml-6">
+                Side-by-side layout with form left, affected bookings preview right.
+              </p>
+              <div className="ml-6 mt-2 flex flex-wrap gap-1">
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Visual preview</span>
               </div>
             </button>
           </div>
@@ -171,7 +196,7 @@ const App = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">Edit Booking Demo</h2>
           <p className="text-sm text-gray-500 mb-4">
-            Click the button below to see the <strong>{activeDesign === 'standard' ? 'Standard' : 'Compact'}</strong> modal design in action.
+            Click the button below to see the <strong>{activeDesign === 'standard' ? 'Standard' : activeDesign === 'compact' ? 'Compact' : 'Split Panel'}</strong> modal design in action.
           </p>
 
           <button
@@ -188,9 +213,10 @@ const App = () => {
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
             <h3 className="font-medium text-gray-800 text-sm mb-2">Try these interactions:</h3>
             <ul className="text-sm text-gray-600 space-y-1">
-              <li>• Toggle between "This booking only" and "This & future bookings"</li>
-              <li>• Notice the scope impact indicator (shows count of affected bookings)</li>
-              <li>• See how the button text changes based on your selection</li>
+              <li>• Toggle between "This only" and "All future" in the scope selector</li>
+              <li>• Notice how the booking list updates to show affected bookings</li>
+              <li>• See the current booking highlighted in the preview (Split Panel)</li>
+              <li>• Watch the warning banner appear when editing multiple bookings</li>
               <li>• Complete the save to see the toast notification</li>
               <li>• Switch between design variants above to compare</li>
             </ul>
@@ -362,6 +388,15 @@ const App = () => {
       {/* The Unified Modal - Compact Design */}
       {activeDesign === 'compact' && (
         <EditBookingModalCompact
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSave}
+        />
+      )}
+
+      {/* The Unified Modal - Split Panel Design */}
+      {activeDesign === 'split' && (
+        <EditBookingModalSplit
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSave={handleSave}
