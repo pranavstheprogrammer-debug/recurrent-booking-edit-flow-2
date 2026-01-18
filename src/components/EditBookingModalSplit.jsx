@@ -368,7 +368,15 @@ export default function EditBookingModalSplit({ isOpen, onClose, onSave }) {
                 This only
               </button>
               <button
-                onClick={() => setEditScope('series')}
+                onClick={() => {
+                  setEditScope('series');
+                  // Select all future bookings (non-current) by default
+                  const futureIds = [];
+                  for (let i = currentBookingIndex + 1; i < totalBookingsInSeries; i++) {
+                    futureIds.push(i + 1);
+                  }
+                  setSelectedBookings(new Set(futureIds));
+                }}
                 className={`flex-1 px-3 py-2 text-xs font-medium rounded-md transition-all ${
                   editScope === 'series'
                     ? 'bg-white text-gray-900 shadow-sm'
