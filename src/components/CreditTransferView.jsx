@@ -1,28 +1,30 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 
 /**
- * Credit Transfer View - Modern PLAR System for Flight Training
+ * Credit Transfer View - Scalable PLAR System for Flight Training
  *
- * A beautifully designed credit transfer interface featuring:
- * - Modern glassmorphism design with subtle gradients
- * - Interactive progress indicators with real-time updates
- * - Smooth animations and micro-interactions
- * - Intuitive phase-based organization with collapsible sections
- * - Clean, accessible UI following modern design principles
- *
- * Target: Multi-Engine Instrument Rating (ME-IR) training syllabus
+ * Redesigned for unlimited objectives with:
+ * - Responsive grid-based Credit Summary (handles 10+ objective types)
+ * - Compact event cards with inline time tags (no wide tables)
+ * - Expandable event details for full objective view
+ * - Clean, uncluttered UI that scales within drawer bounds
  */
 
-// Time columns organized by flight rules category
+// Extended time columns - demonstrating scalability with many objective types
 const TIME_COLUMNS = [
-  { key: 'vfrDual', label: 'Dual', category: 'VFR', color: 'emerald' },
-  { key: 'ifrDual', label: 'Dual', category: 'IFR', color: 'blue' },
-  { key: 'ifrHood', label: 'Hood', category: 'IFR', color: 'indigo' },
-  { key: 'sim', label: 'Sim', category: null, color: 'purple' },
-  { key: 'xc', label: 'XC', category: null, color: 'amber' },
+  { key: 'vfrDual', label: 'VFR Dual', shortLabel: 'VFR Dual', category: 'VFR', color: 'emerald' },
+  { key: 'ifrDual', label: 'IFR Dual', shortLabel: 'IFR Dual', category: 'IFR', color: 'blue' },
+  { key: 'ifrHood', label: 'IFR Hood', shortLabel: 'Hood', category: 'IFR', color: 'indigo' },
+  { key: 'sim', label: 'Simulator', shortLabel: 'Sim', category: null, color: 'purple' },
+  { key: 'xc', label: 'Cross Country', shortLabel: 'XC', category: null, color: 'amber' },
+  { key: 'night', label: 'Night', shortLabel: 'Night', category: null, color: 'slate' },
+  { key: 'solo', label: 'Solo', shortLabel: 'Solo', category: null, color: 'rose' },
+  { key: 'pic', label: 'PIC', shortLabel: 'PIC', category: null, color: 'cyan' },
+  { key: 'sic', label: 'SIC', shortLabel: 'SIC', category: null, color: 'teal' },
+  { key: 'instrument', label: 'Instrument', shortLabel: 'Inst', category: 'IFR', color: 'violet' },
 ];
 
-// Sample training data organized by phases (ME-IR Syllabus)
+// Sample training data with extended objectives
 const INITIAL_PHASES = [
   {
     id: 'phase1',
@@ -30,12 +32,12 @@ const INITIAL_PHASES = [
     description: 'Basic Instrument Flight Maneuvers',
     icon: '✈️',
     events: [
-      { id: 'inst01', name: 'INST 01', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 0, xc: 0, credited: false },
-      { id: 'inst02', name: 'INST 02', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 0, xc: 0, credited: true },
-      { id: 'inst03', name: 'INST 03', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, credited: true },
-      { id: 'inst04', name: 'INST 04', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 0, xc: 0, credited: false },
-      { id: 'inst05', name: 'INST 05', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 0, xc: 0, credited: false },
-      { id: 'inst06', name: 'INST 06', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, credited: false },
+      { id: 'inst01', name: 'INST 01', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 30, credited: false },
+      { id: 'inst02', name: 'INST 02', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 30, credited: true },
+      { id: 'inst03', name: 'INST 03', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 45, credited: true },
+      { id: 'inst04', name: 'INST 04', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 30, credited: false },
+      { id: 'inst05', name: 'INST 05', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 30, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 30, credited: false },
+      { id: 'inst06', name: 'INST 06', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 60, solo: 0, pic: 0, sic: 0, instrument: 45, credited: false },
     ]
   },
   {
@@ -44,29 +46,34 @@ const INITIAL_PHASES = [
     description: 'Advanced Instrument Procedures',
     icon: '🎯',
     events: [
-      { id: 'inst07', name: 'INST 07', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, credited: true },
-      { id: 'inst08', name: 'INST 08', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, credited: false },
-      { id: 'inst09', name: 'INST 09', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, credited: true },
-      { id: 'inst10', name: 'INST 10', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, credited: true },
-      { id: 'inst11', name: 'INST 11', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, credited: true },
-      { id: 'inst12', name: 'INST 12', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, credited: true },
-      { id: 'inst13', name: 'INST 13', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, credited: false },
-      { id: 'inst14', name: 'INST 14', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, credited: false },
-      { id: 'inst15', name: 'INST 15', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, credited: false },
-      { id: 'inst16', name: 'INST 16', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, credited: false },
-      { id: 'inst17', name: 'INST 17', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, credited: false },
-      { id: 'inst18', name: 'INST 18', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, credited: false },
+      { id: 'inst07', name: 'INST 07', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 60, night: 0, solo: 0, pic: 30, sic: 0, instrument: 60, credited: true },
+      { id: 'inst08', name: 'INST 08', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 60, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 60, credited: false },
+      { id: 'inst09', name: 'INST 09', vfrDual: 30, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 30, solo: 0, pic: 0, sic: 30, instrument: 60, credited: true },
+      { id: 'inst10', name: 'INST 10', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 90, night: 0, solo: 60, pic: 60, sic: 0, instrument: 60, credited: true },
+      { id: 'inst11', name: 'INST 11', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 60, solo: 0, pic: 0, sic: 0, instrument: 60, credited: true },
+      { id: 'inst12', name: 'INST 12', vfrDual: 60, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 60, credited: true },
+      { id: 'inst13', name: 'INST 13', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 90, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 60, credited: false },
+      { id: 'inst14', name: 'INST 14', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 120, night: 90, solo: 0, pic: 90, sic: 0, instrument: 60, credited: false },
+      { id: 'inst15', name: 'INST 15', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 0, solo: 90, pic: 0, sic: 60, instrument: 60, credited: false },
+      { id: 'inst16', name: 'INST 16', vfrDual: 45, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 60, credited: false },
+      { id: 'inst17', name: 'INST 17', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 45, solo: 0, pic: 0, sic: 0, instrument: 60, credited: false },
+      { id: 'inst18', name: 'INST 18', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 0, solo: 0, pic: 45, sic: 0, instrument: 60, credited: false },
     ]
   },
 ];
 
-// Syllabus requirements
+// Syllabus requirements (extended)
 const SYLLABUS_REQUIREMENTS = {
   vfrDual: 250,
   ifrDual: 3000,
   ifrHood: 0,
-  sim: 0,
-  xc: 0,
+  sim: 600,
+  xc: 500,
+  night: 300,
+  solo: 200,
+  pic: 400,
+  sic: 100,
+  instrument: 900,
 };
 
 // Helper to format minutes to H:MM display
@@ -90,6 +97,23 @@ const parseTime = (timeStr) => {
   return null;
 };
 
+// Color mappings for objective tags
+const getColorClasses = (color) => {
+  const colors = {
+    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', pill: 'bg-emerald-100' },
+    blue: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', pill: 'bg-blue-100' },
+    indigo: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', pill: 'bg-indigo-100' },
+    purple: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', pill: 'bg-purple-100' },
+    amber: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', pill: 'bg-amber-100' },
+    slate: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', pill: 'bg-slate-100' },
+    rose: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', pill: 'bg-rose-100' },
+    cyan: { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200', pill: 'bg-cyan-100' },
+    teal: { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200', pill: 'bg-teal-100' },
+    violet: { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200', pill: 'bg-violet-100' },
+  };
+  return colors[color] || colors.blue;
+};
+
 // Icons
 const CloseIcon = () => (
   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -111,6 +135,17 @@ const ChevronIcon = ({ isOpen }) => (
     stroke="currentColor"
   >
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+  </svg>
+);
+
+const ChevronRightIcon = ({ isOpen }) => (
+  <svg
+    className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
   </svg>
 );
 
@@ -228,7 +263,7 @@ const ModernCheckbox = ({ checked, onChange, indeterminate = false, size = 'md' 
   );
 };
 
-// Editable Time Input with modern styling
+// Editable Time Input for summary cards
 const EditableTimeInput = ({ value, onChange, disabled = false }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localValue, setLocalValue] = useState(formatTime(value) || '0:00');
@@ -261,7 +296,7 @@ const EditableTimeInput = ({ value, onChange, disabled = false }) => {
 
   if (disabled) {
     return (
-      <span className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600">
+      <span className="text-lg font-bold text-gray-700 tabular-nums">
         {formatTime(value) || '—'}
       </span>
     );
@@ -276,7 +311,7 @@ const EditableTimeInput = ({ value, onChange, disabled = false }) => {
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         autoFocus
-        className="w-20 px-3 py-1.5 text-center text-sm font-medium border-2 border-blue-500 rounded-lg
+        className="w-16 px-2 py-1 text-center text-sm font-bold border-2 border-blue-500 rounded-lg
                    focus:outline-none focus:ring-4 focus:ring-blue-500/20 bg-white shadow-lg"
       />
     );
@@ -285,17 +320,15 @@ const EditableTimeInput = ({ value, onChange, disabled = false }) => {
   return (
     <button
       onClick={() => setIsEditing(true)}
-      className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700
-                 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200
-                 transition-all duration-200 hover:border-blue-300 hover:shadow-sm
-                 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+      className="text-lg font-bold text-gray-900 tabular-nums hover:text-blue-600
+                 transition-colors duration-200 cursor-pointer"
     >
-      {formatTime(value) || '0:00'}
+      {formatTime(value) || '—'}
     </button>
   );
 };
 
-// Reset Confirmation Dialog with modern styling
+// Reset Confirmation Dialog
 const ResetDialog = ({ isOpen, onClose, onConfirm }) => {
   if (!isOpen) return null;
 
@@ -335,27 +368,140 @@ const ResetDialog = ({ isOpen, onClose, onConfirm }) => {
   );
 };
 
-// Statistics Card Component
-const StatCard = ({ label, value, subValue, color = 'blue', icon }) => {
-  const colorClasses = {
-    blue: 'from-blue-500 to-blue-600 shadow-blue-500/30',
-    emerald: 'from-emerald-500 to-emerald-600 shadow-emerald-500/30',
-    purple: 'from-purple-500 to-purple-600 shadow-purple-500/30',
-    amber: 'from-amber-500 to-amber-600 shadow-amber-500/30',
-  };
+// Credit Summary Card - single objective card in the grid
+const CreditSummaryCard = ({ column, requirement, credited, onOverride }) => {
+  const colors = getColorClasses(column.color);
+  const hasRequirement = requirement > 0;
+  const hasCredited = credited > 0;
 
   return (
-    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
+    <div className={`
+      p-3 rounded-xl border transition-all duration-200
+      ${hasCredited ? `${colors.bg} ${colors.border}` : 'bg-gray-50 border-gray-200'}
+      hover:shadow-md
+    `}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{label}</span>
-        {icon && (
-          <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${colorClasses[color]} flex items-center justify-center text-white shadow-lg`}>
-            {icon}
-          </div>
+        <span className={`text-xs font-semibold uppercase tracking-wide ${hasCredited ? colors.text : 'text-gray-500'}`}>
+          {column.shortLabel}
+        </span>
+        {column.category && (
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${colors.pill} ${colors.text}`}>
+            {column.category}
+          </span>
         )}
       </div>
-      <div className="text-2xl font-bold text-gray-900">{value}</div>
-      {subValue && <div className="text-xs text-gray-400 mt-1">{subValue}</div>}
+      <div className="space-y-1">
+        <div className="flex justify-between items-center">
+          <span className="text-[10px] text-gray-400 uppercase">Req</span>
+          <span className="text-xs text-gray-500 tabular-nums">
+            {hasRequirement ? formatTime(requirement) : '—'}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-[10px] text-gray-400 uppercase">Cred</span>
+          <EditableTimeInput
+            value={credited}
+            onChange={onOverride}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Time Tag - compact inline display of a time value
+const TimeTag = ({ column, value }) => {
+  const colors = getColorClasses(column.color);
+  return (
+    <span className={`
+      inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
+      ${colors.pill} ${colors.text}
+    `}>
+      <span className="opacity-70">{column.shortLabel}</span>
+      <span className="font-bold tabular-nums">{formatTime(value)}</span>
+    </span>
+  );
+};
+
+// Event Card - compact display of a single event
+const EventCard = ({ event, onCredit, expanded, onToggleExpand }) => {
+  // Get non-zero time columns for this event
+  const nonZeroTimes = useMemo(() => {
+    return TIME_COLUMNS.filter(col => event[col.key] > 0);
+  }, [event]);
+
+  return (
+    <div className={`
+      rounded-xl border transition-all duration-200 overflow-hidden
+      ${event.credited
+        ? 'bg-blue-50/50 border-blue-200 shadow-sm'
+        : 'bg-white border-gray-200 hover:border-gray-300'}
+    `}>
+      {/* Main row - always visible */}
+      <div className="flex items-center gap-3 px-4 py-3">
+        {/* Checkbox */}
+        <div onClick={(e) => e.stopPropagation()}>
+          <ModernCheckbox
+            checked={event.credited}
+            onChange={(checked) => onCredit(event.id, checked)}
+            size="sm"
+          />
+        </div>
+
+        {/* Event name and times */}
+        <button
+          onClick={onToggleExpand}
+          className="flex-1 flex items-center gap-3 min-w-0 text-left"
+        >
+          <ChevronRightIcon isOpen={expanded} />
+          <span className={`
+            font-semibold text-sm shrink-0
+            ${event.credited ? 'text-blue-700' : 'text-gray-700'}
+          `}>
+            {event.name}
+          </span>
+
+          {/* Inline time tags - show first 3-4 non-zero values */}
+          <div className="flex flex-wrap gap-1.5 min-w-0">
+            {nonZeroTimes.slice(0, 4).map(col => (
+              <TimeTag key={col.key} column={col} value={event[col.key]} />
+            ))}
+            {nonZeroTimes.length > 4 && (
+              <span className="text-xs text-gray-400 px-2 py-0.5">
+                +{nonZeroTimes.length - 4} more
+              </span>
+            )}
+          </div>
+        </button>
+      </div>
+
+      {/* Expanded details - all objectives in vertical list */}
+      {expanded && (
+        <div className="px-4 pb-4 pt-2 border-t border-gray-100">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {TIME_COLUMNS.map(col => {
+              const value = event[col.key];
+              const colors = getColorClasses(col.color);
+              return (
+                <div
+                  key={col.key}
+                  className={`
+                    flex items-center justify-between p-2 rounded-lg
+                    ${value > 0 ? colors.bg : 'bg-gray-50'}
+                  `}
+                >
+                  <span className={`text-xs font-medium ${value > 0 ? colors.text : 'text-gray-400'}`}>
+                    {col.shortLabel}
+                  </span>
+                  <span className={`text-sm font-bold tabular-nums ${value > 0 ? colors.text : 'text-gray-300'}`}>
+                    {value > 0 ? formatTime(value) : '—'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -368,7 +514,8 @@ const PhaseCard = ({
   onCreditEvent,
   onCreditPhase,
   status,
-  totals
+  expandedEvents,
+  onToggleEventExpand
 }) => {
   const creditedCount = phase.events.filter(e => e.credited).length;
   const progress = (creditedCount / phase.events.length) * 100;
@@ -385,11 +532,11 @@ const PhaseCard = ({
       {/* Phase Header */}
       <button
         onClick={onToggle}
-        className="w-full px-5 py-4 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white hover:from-gray-100 hover:to-gray-50 transition-all duration-200"
+        className="w-full px-4 py-4 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white hover:from-gray-100 hover:to-gray-50 transition-all duration-200"
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div className={`
-            w-12 h-12 rounded-xl flex items-center justify-center text-xl
+            w-10 h-10 rounded-xl flex items-center justify-center text-lg
             ${status.allCredited
               ? 'bg-gradient-to-br from-emerald-400 to-emerald-500 shadow-lg shadow-emerald-500/30'
               : status.someCredited
@@ -399,33 +546,33 @@ const PhaseCard = ({
             {phase.icon}
           </div>
           <div className="text-left">
-            <h3 className="text-base font-bold text-gray-900">{phase.name}</h3>
-            <p className="text-sm text-gray-500">{phase.description}</p>
+            <h3 className="text-sm font-bold text-gray-900">{phase.name}</h3>
+            <p className="text-xs text-gray-500">{phase.description}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {/* Progress Indicator */}
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2">
             <div className="text-right">
               <div className="text-sm font-bold text-gray-900">{creditedCount}/{phase.events.length}</div>
-              <div className="text-xs text-gray-500">completed</div>
+              <div className="text-[10px] text-gray-500">completed</div>
             </div>
             <ProgressRing
               progress={progress}
-              size={44}
-              strokeWidth={4}
-              color={status.allCredited ? 'emerald' : status.someCredited ? 'blue' : 'blue'}
+              size={40}
+              strokeWidth={3}
+              color={status.allCredited ? 'emerald' : 'blue'}
             />
           </div>
 
           {/* Select All Checkbox */}
-          <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-2">
+          <div onClick={(e) => e.stopPropagation()}>
             <ModernCheckbox
               checked={status.allCredited}
               indeterminate={status.someCredited}
               onChange={(checked) => onCreditPhase(phase.id, checked)}
-              size="lg"
+              size="md"
             />
           </div>
 
@@ -433,103 +580,21 @@ const PhaseCard = ({
         </div>
       </button>
 
-      {/* Phase Content */}
+      {/* Phase Content - Event Cards */}
       <div className={`
         transition-all duration-300 ease-in-out overflow-hidden
         ${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}
       `}>
-        <div className="px-5 pb-5">
-          {/* Events Table */}
-          <div className="overflow-x-auto -mx-2">
-            <table className="w-full min-w-[600px]">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left py-3 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-36">
-                    Event
-                  </th>
-                  {TIME_COLUMNS.map(col => (
-                    <th key={col.key} className="text-center py-3 px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      <div className="flex flex-col items-center">
-                        {col.category && (
-                          <span className={`
-                            text-[10px] px-2 py-0.5 rounded-full mb-1
-                            ${col.category === 'VFR' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}
-                          `}>
-                            {col.category}
-                          </span>
-                        )}
-                        <span>{col.label}</span>
-                      </div>
-                    </th>
-                  ))}
-                  <th className="text-center py-3 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">
-                    Credit
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {phase.events.map((event, idx) => (
-                  <tr
-                    key={event.id}
-                    className={`
-                      transition-all duration-200 group
-                      ${event.credited
-                        ? 'bg-gradient-to-r from-blue-50/80 to-transparent hover:from-blue-100/80'
-                        : 'hover:bg-gray-50/80'}
-                    `}
-                  >
-                    <td className="py-3 px-3">
-                      <div className="flex items-center gap-2">
-                        {event.credited && (
-                          <div className="w-1 h-6 bg-gradient-to-b from-blue-400 to-blue-500 rounded-full" />
-                        )}
-                        <button className={`
-                          text-sm font-semibold transition-colors duration-200
-                          ${event.credited ? 'text-blue-600 hover:text-blue-700' : 'text-gray-700 hover:text-blue-600'}
-                        `}>
-                          {event.name}
-                        </button>
-                      </div>
-                    </td>
-                    {TIME_COLUMNS.map(col => (
-                      <td key={col.key} className="text-center py-3 px-2">
-                        <span className={`
-                          text-sm font-medium tabular-nums
-                          ${event.credited ? 'text-blue-600' : 'text-gray-500'}
-                          ${event[col.key] > 0 ? '' : 'opacity-40'}
-                        `}>
-                          {event[col.key] > 0 ? formatTime(event[col.key]) : '—'}
-                        </span>
-                      </td>
-                    ))}
-                    <td className="text-center py-3 px-3">
-                      <ModernCheckbox
-                        checked={event.credited}
-                        onChange={(checked) => onCreditEvent(event.id, checked)}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Phase Totals */}
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
-              <span className="text-sm font-bold text-gray-700">Phase Total</span>
-              <div className="flex items-center gap-6">
-                {TIME_COLUMNS.map(col => (
-                  <div key={col.key} className="text-center">
-                    <div className="text-xs text-gray-400 uppercase">{col.label}</div>
-                    <div className="text-sm font-bold text-gray-700 tabular-nums">
-                      {totals[col.key] > 0 ? formatTime(totals[col.key]) : '—'}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+        <div className="px-4 pb-4 space-y-2">
+          {phase.events.map((event) => (
+            <EventCard
+              key={event.id}
+              event={event}
+              onCredit={onCreditEvent}
+              expanded={expandedEvents.has(event.id)}
+              onToggleExpand={() => onToggleEventExpand(event.id)}
+            />
+          ))}
         </div>
       </div>
     </div>
@@ -550,6 +615,7 @@ const CreditTransferView = ({
   const [isSaving, setIsSaving] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [expandedPhases, setExpandedPhases] = useState(['phase1', 'phase2']);
+  const [expandedEvents, setExpandedEvents] = useState(new Set());
 
   // Calculate credited totals from checked events
   const calculatedTotals = useMemo(() => {
@@ -587,15 +653,6 @@ const CreditTransferView = ({
       progress: totalEvents > 0 ? (creditedEvents / totalEvents) * 100 : 0,
     };
   }, [phases]);
-
-  // Calculate phase totals
-  const calculatePhaseTotals = useCallback((phase) => {
-    const totals = {};
-    TIME_COLUMNS.forEach(col => {
-      totals[col.key] = phase.events.reduce((sum, event) => sum + (event[col.key] || 0), 0);
-    });
-    return totals;
-  }, []);
 
   // Check phase credit status
   const getPhaseStatus = useCallback((phase) => {
@@ -654,6 +711,18 @@ const CreditTransferView = ({
     );
   }, []);
 
+  const toggleEventExpand = useCallback((eventId) => {
+    setExpandedEvents(prev => {
+      const next = new Set(prev);
+      if (next.has(eventId)) {
+        next.delete(eventId);
+      } else {
+        next.add(eventId);
+      }
+      return next;
+    });
+  }, []);
+
   if (!isOpen) return null;
 
   return (
@@ -662,15 +731,15 @@ const CreditTransferView = ({
       <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm animate-fadeIn" onClick={onClose} />
 
       {/* Panel */}
-      <div className="absolute inset-y-0 right-0 w-full max-w-4xl flex flex-col bg-gray-50 shadow-2xl animate-slideIn">
+      <div className="absolute inset-y-0 right-0 w-full max-w-2xl flex flex-col bg-gray-50 shadow-2xl animate-slideIn">
 
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white">
           {/* Top Bar */}
-          <div className="flex justify-between items-center px-6 py-3 border-b border-white/10">
+          <div className="flex justify-between items-center px-5 py-2.5 border-b border-white/10">
             <div className="flex items-center gap-2">
               <div className={`
-                flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium
+                flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium
                 transition-all duration-300
                 ${isSaving
                   ? 'bg-emerald-500/20 text-emerald-300'
@@ -698,14 +767,14 @@ const CreditTransferView = ({
           </div>
 
           {/* Student Info */}
-          <div className="px-6 py-5">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+          <div className="px-5 py-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
                 <UserIcon />
               </div>
               <div>
-                <h1 className="text-xl font-bold">{studentName}</h1>
-                <div className="flex items-center gap-2 text-sm text-white/70">
+                <h1 className="text-lg font-bold">{studentName}</h1>
+                <div className="flex items-center gap-2 text-xs text-white/70">
                   <span className="px-2 py-0.5 bg-white/10 rounded-md font-mono">{studentId}</span>
                   <span className="px-2 py-0.5 bg-white/10 rounded-md font-mono">{studentCode}</span>
                   <span className="flex items-center gap-1">
@@ -717,19 +786,19 @@ const CreditTransferView = ({
             </div>
 
             {/* Overall Progress */}
-            <div className="flex items-center gap-4 p-4 bg-white/5 rounded-xl backdrop-blur-sm">
+            <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl backdrop-blur-sm">
               <ProgressRing
                 progress={overallStats.progress}
-                size={56}
-                strokeWidth={5}
+                size={48}
+                strokeWidth={4}
                 color="emerald"
               />
               <div className="flex-1">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-white/70">Overall Progress</span>
-                  <span className="text-sm font-bold text-white">{overallStats.creditedEvents} of {overallStats.totalEvents} events</span>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-medium text-white/70">Overall Progress</span>
+                  <span className="text-xs font-bold text-white">{overallStats.creditedEvents} of {overallStats.totalEvents} events</span>
                 </div>
-                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-500"
                     style={{ width: `${overallStats.progress}%` }}
@@ -740,13 +809,13 @@ const CreditTransferView = ({
           </div>
         </div>
 
-        {/* Summary Section */}
-        <div className="px-6 py-4 bg-white border-b border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Credit Summary</h2>
+        {/* Credit Summary Section - Grid of Cards */}
+        <div className="px-5 py-4 bg-white border-b border-gray-200">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Credit Summary</h2>
             <button
               onClick={() => setShowResetDialog(true)}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-600
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-red-600
                          bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200"
             >
               <RefreshIcon />
@@ -754,61 +823,25 @@ const CreditTransferView = ({
             </button>
           </div>
 
-          {/* Summary Table */}
-          <div className="overflow-x-auto -mx-2">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 w-28"></th>
-                  {TIME_COLUMNS.map(col => (
-                    <th key={col.key} className="text-center py-2 px-2 text-xs font-medium text-gray-500">
-                      <div className="flex flex-col items-center">
-                        {col.category && (
-                          <span className={`
-                            text-[10px] px-2 py-0.5 rounded-full mb-1
-                            ${col.category === 'VFR' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}
-                          `}>
-                            {col.category}
-                          </span>
-                        )}
-                        <span className="uppercase tracking-wider">{col.label}</span>
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-gray-50">
-                  <td className="py-3 px-3 text-sm font-medium text-gray-700">Syllabus</td>
-                  {TIME_COLUMNS.map(col => (
-                    <td key={col.key} className="text-center py-3 px-2">
-                      <span className="text-sm text-gray-500 tabular-nums">
-                        {SYLLABUS_REQUIREMENTS[col.key] > 0 ? formatTime(SYLLABUS_REQUIREMENTS[col.key]) : '—'}
-                      </span>
-                    </td>
-                  ))}
-                </tr>
-                <tr>
-                  <td className="py-3 px-3 text-sm font-bold text-gray-900">Credited</td>
-                  {TIME_COLUMNS.map(col => (
-                    <td key={col.key} className="text-center py-2 px-2">
-                      <EditableTimeInput
-                        value={creditedTotals[col.key]}
-                        onChange={(val) => handleManualOverride(col.key, val)}
-                      />
-                    </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
+          {/* Responsive Grid of Objective Cards */}
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+            {TIME_COLUMNS.map(col => (
+              <CreditSummaryCard
+                key={col.key}
+                column={col}
+                requirement={SYLLABUS_REQUIREMENTS[col.key]}
+                credited={creditedTotals[col.key]}
+                onOverride={(val) => handleManualOverride(col.key, val)}
+              />
+            ))}
           </div>
-          <p className="text-xs text-gray-400 mt-3 text-center">
-            Click on credited values to manually override
+          <p className="text-[10px] text-gray-400 mt-2 text-center">
+            Click credited values to manually override
           </p>
         </div>
 
         {/* Phases List */}
-        <div className="flex-1 overflow-auto p-6 space-y-4">
+        <div className="flex-1 overflow-auto p-5 space-y-3">
           {phases.map((phase) => (
             <PhaseCard
               key={phase.id}
@@ -818,20 +851,21 @@ const CreditTransferView = ({
               onCreditEvent={handleCreditEvent}
               onCreditPhase={handleCreditPhase}
               status={getPhaseStatus(phase)}
-              totals={calculatePhaseTotals(phase)}
+              expandedEvents={expandedEvents}
+              onToggleEventExpand={toggleEventExpand}
             />
           ))}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-white border-t border-gray-200 flex justify-between items-center">
-          <div className="text-sm text-gray-500">
+        <div className="px-5 py-3 bg-white border-t border-gray-200 flex justify-between items-center">
+          <div className="text-xs text-gray-500">
             <span className="font-semibold text-gray-900">{overallStats.creditedEvents}</span> of{' '}
             <span className="font-semibold text-gray-900">{overallStats.totalEvents}</span> events credited
           </div>
           <button
             onClick={onClose}
-            className="px-6 py-2.5 text-sm font-semibold text-white
+            className="px-5 py-2 text-sm font-semibold text-white
                        bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900
                        rounded-xl shadow-lg transition-all duration-200"
           >
