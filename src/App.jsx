@@ -5,11 +5,13 @@ import EditBookingModalSplit from '@components/EditBookingModalSplit';
 import CreateBookingModal from '@components/CreateBookingModal';
 import CreateBookingModalSplit from '@components/CreateBookingModalSplit';
 import CreditTransferDrawer from '@components/CreditTransferDrawer';
+import CreditTransferView from '@components/CreditTransferView';
 import Toast from '@components/Toast';
 
 const App = () => {
   const [activeDesign, setActiveDesign] = useState('split'); // 'standard', 'compact', or 'split'
   const [activeCreateDesign, setActiveCreateDesign] = useState('inline'); // 'inline' or 'split'
+  const [activeCreditDesign, setActiveCreditDesign] = useState('wireframe'); // 'drawer' or 'wireframe'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreditTransferOpen, setIsCreditTransferOpen] = useState(false);
@@ -379,78 +381,116 @@ const App = () => {
 
         {/* ========== CREDIT TRANSFER SECTION ========== */}
         <div className="mt-8 pt-8 border-t-2 border-gray-300">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Credit Transfer Drawer</h2>
-          <p className="text-sm text-gray-500 mb-6">Modern redesign of the credit transfer interface for aviation training management</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Credit Transfer System</h2>
+          <p className="text-sm text-gray-500 mb-6">PLAR (Prior Learning Assessment and Recognition) system for flight training credit management</p>
         </div>
 
         {/* Credit Transfer - Design Overview */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Design Improvements</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">About Credit Transfer</h2>
+
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 mb-4">
+            <h3 className="font-medium text-blue-800 mb-2">What is PLAR?</h3>
+            <p className="text-sm text-blue-700">
+              Prior Learning Assessment and Recognition allows flight schools to credit students for training completed at other institutions,
+              reducing redundant training when students transfer between schools. This interface manages credit transfers for
+              <strong> Multi-Engine Instrument Rating (ME-IR)</strong> training syllabuses.
+            </p>
+          </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Before */}
-            <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-              <h3 className="font-medium text-red-800 mb-3 flex items-center gap-2">
+            {/* Drawer Design */}
+            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <h3 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
-                Before: Original UI Issues
+                Modern Drawer Design
               </h3>
-              <ul className="space-y-2 text-sm text-red-700">
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">1</span>
-                  <span>Flat visual hierarchy - everything looks equal</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">2</span>
-                  <span>Cluttered table with "--" dashes everywhere</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">3</span>
-                  <span>No search/filter for long event list</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">4</span>
-                  <span>Missing save/cancel actions</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">5</span>
-                  <span>Awkward H/M time input fields</span>
-                </li>
+              <ul className="space-y-1 text-sm text-gray-600">
+                <li>• Gradient header with student info</li>
+                <li>• Search and filter functionality</li>
+                <li>• Collapsible phase sections</li>
+                <li>• Progress badges and stats</li>
               </ul>
             </div>
 
-            {/* After */}
+            {/* Wireframe Design */}
             <div className="p-4 bg-green-50 rounded-lg border border-green-200">
               <h3 className="font-medium text-green-800 mb-3 flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                After: Redesigned UI
+                NORTÁVIA Wireframe Design
+                <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded font-medium">New</span>
               </h3>
-              <ul className="space-y-2 text-sm text-green-700">
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
-                  <span><strong>Clear visual hierarchy</strong> - gradient header, colored cards</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
-                  <span><strong>Search & filter</strong> - find events quickly</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
-                  <span><strong>Bulk selection</strong> - select/reset multiple events</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
-                  <span><strong>Collapsible sections</strong> - manage information density</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
-                  <span><strong>Edit mode toggle</strong> - clear read vs edit states</span>
-                </li>
+              <ul className="space-y-1 text-sm text-green-700">
+                <li>• Two-row VFR/IFR column headers</li>
+                <li>• Syllabus vs Credited summary</li>
+                <li>• Phase totals at bottom of each phase</li>
+                <li>• Checkboxes on right side (like original)</li>
               </ul>
             </div>
+          </div>
+        </div>
+
+        {/* Credit Transfer - Design Variants */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Credit Transfer Variants</h2>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Drawer Design */}
+            <button
+              onClick={() => setActiveCreditDesign('drawer')}
+              className={`p-4 rounded-lg border-2 text-left transition-all ${
+                activeCreditDesign === 'drawer'
+                  ? 'border-slate-500 bg-slate-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  activeCreditDesign === 'drawer' ? 'border-slate-500' : 'border-gray-300'
+                }`}>
+                  {activeCreditDesign === 'drawer' && <div className="w-2 h-2 rounded-full bg-slate-500" />}
+                </div>
+                <h3 className="font-semibold text-gray-900">Modern Drawer</h3>
+              </div>
+              <p className="text-sm text-gray-600 ml-6">
+                Feature-rich design with search, collapsible phases, progress indicators, and modern styling.
+              </p>
+              <div className="ml-6 mt-2 flex flex-wrap gap-1">
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Search</span>
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Collapsible</span>
+              </div>
+            </button>
+
+            {/* Wireframe Design */}
+            <button
+              onClick={() => setActiveCreditDesign('wireframe')}
+              className={`p-4 rounded-lg border-2 text-left transition-all ${
+                activeCreditDesign === 'wireframe'
+                  ? 'border-slate-500 bg-slate-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  activeCreditDesign === 'wireframe' ? 'border-slate-500' : 'border-gray-300'
+                }`}>
+                  {activeCreditDesign === 'wireframe' && <div className="w-2 h-2 rounded-full bg-slate-500" />}
+                </div>
+                <h3 className="font-semibold text-gray-900">NORTÁVIA Wireframe</h3>
+                <span className="px-1.5 py-0.5 bg-slate-100 text-slate-700 text-xs rounded font-medium">New</span>
+              </div>
+              <p className="text-sm text-gray-600 ml-6">
+                Table-based layout matching the NORTÁVIA flight school wireframe with VFR/IFR column headers.
+              </p>
+              <div className="ml-6 mt-2 flex flex-wrap gap-1">
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">VFR/IFR columns</span>
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Phase totals</span>
+              </div>
+            </button>
           </div>
         </div>
 
@@ -458,7 +498,7 @@ const App = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">Credit Transfer Demo</h2>
           <p className="text-sm text-gray-500 mb-4">
-            Click the button below to see the redesigned credit transfer drawer in action.
+            Click the button below to see the <strong>{activeCreditDesign === 'drawer' ? 'Modern Drawer' : 'NORTÁVIA Wireframe'}</strong> design in action.
           </p>
 
           <button
@@ -474,18 +514,32 @@ const App = () => {
           {/* Instructions */}
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
             <h3 className="font-medium text-gray-800 text-sm mb-2">Key features to explore:</h3>
-            <ul className="text-sm text-gray-600 space-y-1">
-              <li>• <strong>Credit Summary Table</strong> - shows Syllabus (Required), Credited, and Remaining</li>
-              <li>• <strong>Editable credited values</strong> - click any credited cell to manually override</li>
-              <li>• <strong>Phase-based organization</strong> - events grouped by training phases</li>
-              <li>• <strong>Checkbox credit toggling</strong> - check/uncheck to credit lessons</li>
-              <li>• <strong>Phase-level selection</strong> - check phase header to credit all lessons in phase</li>
-              <li>• <strong>Visual indicators</strong> - Blue = credited, Orange = partial phase credit</li>
-              <li>• <strong>Auto-save</strong> - no save button needed, changes save immediately</li>
-              <li>• <strong>Search</strong> - filter training events by name</li>
-              <li>• <strong>Reset All</strong> - clear all credits with confirmation dialog</li>
-              <li>• <strong>Collapsible phases</strong> - click chevron to expand/collapse</li>
-            </ul>
+            {activeCreditDesign === 'wireframe' ? (
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• <strong>Student Header</strong> - shows Student ID, Code, and Name (17094 NRO - Nuno Rodrigues)</li>
+                <li>• <strong>VFR/IFR Column Groups</strong> - two-row headers matching wireframe spec</li>
+                <li>• <strong>Syllabus Row</strong> - total hours required for the training program</li>
+                <li>• <strong>Credited Row</strong> - editable inputs with [H:MM] format, Reset button</li>
+                <li>• <strong>Phase Structure</strong> - BIFM, Adv Instruments phases with totals</li>
+                <li>• <strong>Lesson Links</strong> - clickable INST XX links (would navigate to lesson details)</li>
+                <li>• <strong>Right-side Checkboxes</strong> - phase and lesson selection on right</li>
+                <li>• <strong>Blue Highlighting</strong> - credited rows highlighted with blue bar</li>
+                <li>• <strong>Auto-save</strong> - changes save immediately</li>
+              </ul>
+            ) : (
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• <strong>Credit Summary Table</strong> - shows Syllabus (Required), Credited, and Remaining</li>
+                <li>• <strong>Editable credited values</strong> - click any credited cell to manually override</li>
+                <li>• <strong>Phase-based organization</strong> - events grouped by training phases</li>
+                <li>• <strong>Checkbox credit toggling</strong> - check/uncheck to credit lessons</li>
+                <li>• <strong>Phase-level selection</strong> - check phase header to credit all lessons in phase</li>
+                <li>• <strong>Visual indicators</strong> - Blue = credited, Orange = partial phase credit</li>
+                <li>• <strong>Auto-save</strong> - no save button needed, changes save immediately</li>
+                <li>• <strong>Search</strong> - filter training events by name</li>
+                <li>• <strong>Reset All</strong> - clear all credits with confirmation dialog</li>
+                <li>• <strong>Collapsible phases</strong> - click chevron to expand/collapse</li>
+              </ul>
+            )}
           </div>
         </div>
       </div>
@@ -535,13 +589,26 @@ const App = () => {
         />
       )}
 
-      {/* Credit Transfer Drawer */}
-      <CreditTransferDrawer
-        isOpen={isCreditTransferOpen}
-        onClose={() => setIsCreditTransferOpen(false)}
-        studentName="Hello Gomora"
-        programCode="ATPA_FI"
-      />
+      {/* Credit Transfer - Modern Drawer */}
+      {activeCreditDesign === 'drawer' && (
+        <CreditTransferDrawer
+          isOpen={isCreditTransferOpen}
+          onClose={() => setIsCreditTransferOpen(false)}
+          studentName="Hello Gomora"
+          programCode="ATPA_FI"
+        />
+      )}
+
+      {/* Credit Transfer - Wireframe Design */}
+      {activeCreditDesign === 'wireframe' && (
+        <CreditTransferView
+          isOpen={isCreditTransferOpen}
+          onClose={() => setIsCreditTransferOpen(false)}
+          studentId="17094"
+          studentCode="NRO"
+          studentName="Nuno Rodrigues"
+        />
+      )}
 
       {/* Toast Notification (replaces the "Update Complete" modal) */}
       <Toast
