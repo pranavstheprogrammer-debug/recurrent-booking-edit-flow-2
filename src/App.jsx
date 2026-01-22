@@ -4,6 +4,7 @@ import EditBookingModalCompact from '@components/EditBookingModalCompact';
 import EditBookingModalSplit from '@components/EditBookingModalSplit';
 import CreateBookingModal from '@components/CreateBookingModal';
 import CreateBookingModalSplit from '@components/CreateBookingModalSplit';
+import CreditTransferDrawer from '@components/CreditTransferDrawer';
 import Toast from '@components/Toast';
 
 const App = () => {
@@ -11,6 +12,7 @@ const App = () => {
   const [activeCreateDesign, setActiveCreateDesign] = useState('inline'); // 'inline' or 'split'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreditTransferOpen, setIsCreditTransferOpen] = useState(false);
   const [toast, setToast] = useState({ isVisible: false, message: '', description: '' });
 
   const handleSave = (formData, editScope) => {
@@ -374,6 +376,118 @@ const App = () => {
             </ul>
           </div>
         </div>
+
+        {/* ========== CREDIT TRANSFER SECTION ========== */}
+        <div className="mt-8 pt-8 border-t-2 border-gray-300">
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Credit Transfer Drawer</h2>
+          <p className="text-sm text-gray-500 mb-6">Modern redesign of the credit transfer interface for aviation training management</p>
+        </div>
+
+        {/* Credit Transfer - Design Overview */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Design Improvements</h2>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Before */}
+            <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+              <h3 className="font-medium text-red-800 mb-3 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Before: Original UI Issues
+              </h3>
+              <ul className="space-y-2 text-sm text-red-700">
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">1</span>
+                  <span>Flat visual hierarchy - everything looks equal</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">2</span>
+                  <span>Cluttered table with "--" dashes everywhere</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">3</span>
+                  <span>No search/filter for long event list</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">4</span>
+                  <span>Missing save/cancel actions</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">5</span>
+                  <span>Awkward H/M time input fields</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* After */}
+            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+              <h3 className="font-medium text-green-800 mb-3 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                After: Redesigned UI
+              </h3>
+              <ul className="space-y-2 text-sm text-green-700">
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
+                  <span><strong>Clear visual hierarchy</strong> - gradient header, colored cards</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
+                  <span><strong>Search & filter</strong> - find events quickly</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
+                  <span><strong>Bulk selection</strong> - select/reset multiple events</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
+                  <span><strong>Collapsible sections</strong> - manage information density</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
+                  <span><strong>Edit mode toggle</strong> - clear read vs edit states</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Credit Transfer - Demo Trigger */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Credit Transfer Demo</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Click the button below to see the redesigned credit transfer drawer in action.
+          </p>
+
+          <button
+            onClick={() => setIsCreditTransferOpen(true)}
+            className="px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-900 transition-colors flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+            Open Credit Transfer
+          </button>
+
+          {/* Instructions */}
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <h3 className="font-medium text-gray-800 text-sm mb-2">Key features to explore:</h3>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• <strong>Credit Summary Table</strong> - shows Syllabus (Required), Credited, and Remaining</li>
+              <li>• <strong>Editable credited values</strong> - click any credited cell to manually override</li>
+              <li>• <strong>Phase-based organization</strong> - events grouped by training phases</li>
+              <li>• <strong>Checkbox credit toggling</strong> - check/uncheck to credit lessons</li>
+              <li>• <strong>Phase-level selection</strong> - check phase header to credit all lessons in phase</li>
+              <li>• <strong>Visual indicators</strong> - Blue = credited, Orange = partial phase credit</li>
+              <li>• <strong>Auto-save</strong> - no save button needed, changes save immediately</li>
+              <li>• <strong>Search</strong> - filter training events by name</li>
+              <li>• <strong>Reset All</strong> - clear all credits with confirmation dialog</li>
+              <li>• <strong>Collapsible phases</strong> - click chevron to expand/collapse</li>
+            </ul>
+          </div>
+        </div>
       </div>
 
       {/* The Unified Modal - Standard Design */}
@@ -420,6 +534,14 @@ const App = () => {
           onBook={handleBook}
         />
       )}
+
+      {/* Credit Transfer Drawer */}
+      <CreditTransferDrawer
+        isOpen={isCreditTransferOpen}
+        onClose={() => setIsCreditTransferOpen(false)}
+        studentName="Hello Gomora"
+        programCode="ATPA_FI"
+      />
 
       {/* Toast Notification (replaces the "Update Complete" modal) */}
       <Toast
