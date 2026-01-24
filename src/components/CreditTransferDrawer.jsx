@@ -6,10 +6,10 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
  *
  * Key Features:
  * - Unified view with summary + training events grid
- * - Organized by Phases (sections) containing Training Events (lessons)
+ * - Organized by Sections containing Training Events (lessons)
  * - Checkbox-based credit toggling with auto-save
- * - Visual indicators: Blue = credited, Orange = partial phase
- * - Phase-level bulk selection
+ * - Visual indicators: Blue = credited, Orange = partial section
+ * - Section-level bulk selection
  * - Manual override for credited totals
  */
 
@@ -23,11 +23,11 @@ const TIME_CATEGORIES = [
   { key: 'solo', label: 'Solo', shortLabel: 'Solo' },
 ];
 
-// Sample training data organized by phases
-const INITIAL_PHASES = [
+// Sample training data organized by sections
+const INITIAL_SECTIONS = [
   {
-    id: 'phase1',
-    name: 'Phase 1 - BIFM',
+    id: 'section1',
+    name: 'Section 1 - BIFM',
     description: 'Basic Instrument Flight Maneuvers',
     events: [
       { id: 'inst01', name: 'INST 01', description: 'Introduction to Instruments', vfrDual: 10, ifrDual: 90, sim: 0, xc: 0, night: 0, solo: 0, credited: false },
@@ -39,8 +39,8 @@ const INITIAL_PHASES = [
     ]
   },
   {
-    id: 'phase2',
-    name: 'Phase 2 - Advanced Instruments',
+    id: 'section2',
+    name: 'Section 2 - Advanced Instruments',
     description: 'Advanced Instrument Procedures',
     events: [
       { id: 'inst07', name: 'INST 07', description: 'ILS Approaches', vfrDual: 10, ifrDual: 120, sim: 0, xc: 0, night: 0, solo: 0, credited: true },
@@ -51,8 +51,8 @@ const INITIAL_PHASES = [
     ]
   },
   {
-    id: 'phase3',
-    name: 'Phase 3 - Cross Country',
+    id: 'section3',
+    name: 'Section 3 - Cross Country',
     description: 'Cross Country Flight Training',
     events: [
       { id: 'xc01', name: 'XC 01', description: 'Flight Planning', vfrDual: 0, ifrDual: 120, sim: 0, xc: 120, night: 0, solo: 0, credited: false },
@@ -62,8 +62,8 @@ const INITIAL_PHASES = [
     ]
   },
   {
-    id: 'phase4',
-    name: 'Phase 4 - Simulator',
+    id: 'section4',
+    name: 'Section 4 - Simulator',
     description: 'Simulator Training Sessions',
     events: [
       { id: 'sim01', name: 'SIM 01', description: 'Basic Sim Training', vfrDual: 0, ifrDual: 0, sim: 120, xc: 0, night: 0, solo: 0, credited: false },
@@ -264,10 +264,10 @@ const Checkbox = ({ checked, onChange, indeterminate = false, disabled = false }
   );
 };
 
-// Phase Header Component
-const PhaseHeader = ({ phase, isExpanded, onToggle, onCreditChange, phaseStatus }) => {
-  const creditedCount = phase.events.filter(e => e.credited).length;
-  const totalCount = phase.events.length;
+// Section Header Component
+const SectionHeader = ({ section, isExpanded, onToggle, onCreditChange, sectionStatus }) => {
+  const creditedCount = section.events.filter(e => e.credited).length;
+  const totalCount = section.events.length;
   const isAllCredited = creditedCount === totalCount;
   const isPartialCredited = creditedCount > 0 && creditedCount < totalCount;
 
@@ -298,7 +298,7 @@ const PhaseHeader = ({ phase, isExpanded, onToggle, onCreditChange, phaseStatus 
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-gray-800">{phase.name}</h3>
+            <h3 className="text-sm font-semibold text-gray-800">{section.name}</h3>
             <span className={`
               px-2 py-0.5 text-xs font-medium rounded-full
               ${isAllCredited
@@ -311,7 +311,7 @@ const PhaseHeader = ({ phase, isExpanded, onToggle, onCreditChange, phaseStatus 
               {creditedCount}/{totalCount} credited
             </span>
           </div>
-          <p className="text-xs text-gray-500 mt-0.5">{phase.description}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{section.description}</p>
         </div>
       </div>
     </div>
@@ -431,8 +431,8 @@ const ResetDialog = ({ isOpen, onClose, onConfirm }) => {
 // Main Credit Transfer Drawer Component
 const CreditTransferDrawer = ({ isOpen, onClose, studentName = "Hello Gomora", programCode = "ATPA_FI" }) => {
   // State
-  const [phases, setPhases] = useState(INITIAL_PHASES);
-  const [expandedPhases, setExpandedPhases] = useState(new Set(['phase1', 'phase2']));
+  const [sections, setSections] = useState(INITIAL_SECTIONS);
+  const [expandedSections, setExpandedSections] = useState(new Set(['section1', 'section2']));
   const [searchQuery, setSearchQuery] = useState('');
   const [manualOverrides, setManualOverrides] = useState({});
   const [editingCell, setEditingCell] = useState(null);
@@ -446,8 +446,8 @@ const CreditTransferDrawer = ({ isOpen, onClose, studentName = "Hello Gomora", p
       totals[cat.key] = 0;
     });
 
-    phases.forEach(phase => {
-      phase.events.forEach(event => {
+    sections.forEach(section => {
+      section.events.forEach(event => {
         if (event.credited) {
           TIME_CATEGORIES.forEach(cat => {
             totals[cat.key] += event[cat.key] || 0;
@@ -462,7 +462,7 @@ const CreditTransferDrawer = ({ isOpen, onClose, studentName = "Hello Gomora", p
     });
 
     return totals;
-  }, [phases, manualOverrides]);
+  }, [sections, manualOverrides]);
 
   // Calculate remaining
   const remainingTotals = useMemo(() => {
@@ -473,36 +473,36 @@ const CreditTransferDrawer = ({ isOpen, onClose, studentName = "Hello Gomora", p
     return remaining;
   }, [creditedTotals]);
 
-  // Filter phases/events by search
-  const filteredPhases = useMemo(() => {
-    if (!searchQuery) return phases;
+  // Filter sections/events by search
+  const filteredSections = useMemo(() => {
+    if (!searchQuery) return sections;
 
-    return phases.map(phase => ({
-      ...phase,
-      events: phase.events.filter(event =>
+    return sections.map(section => ({
+      ...section,
+      events: section.events.filter(event =>
         event.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         event.description.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    })).filter(phase => phase.events.length > 0);
-  }, [phases, searchQuery]);
+    })).filter(section => section.events.length > 0);
+  }, [sections, searchQuery]);
 
   // Total counts
   const totalCredited = useMemo(() => {
-    return phases.reduce((sum, phase) => sum + phase.events.filter(e => e.credited).length, 0);
-  }, [phases]);
+    return sections.reduce((sum, section) => sum + section.events.filter(e => e.credited).length, 0);
+  }, [sections]);
 
   const totalEvents = useMemo(() => {
-    return phases.reduce((sum, phase) => sum + phase.events.length, 0);
-  }, [phases]);
+    return sections.reduce((sum, section) => sum + section.events.length, 0);
+  }, [sections]);
 
   // Handlers
-  const handleTogglePhase = useCallback((phaseId) => {
-    setExpandedPhases(prev => {
+  const handleToggleSection = useCallback((sectionId) => {
+    setExpandedSections(prev => {
       const next = new Set(prev);
-      if (next.has(phaseId)) {
-        next.delete(phaseId);
+      if (next.has(sectionId)) {
+        next.delete(sectionId);
       } else {
-        next.add(phaseId);
+        next.add(sectionId);
       }
       return next;
     });
@@ -510,21 +510,21 @@ const CreditTransferDrawer = ({ isOpen, onClose, studentName = "Hello Gomora", p
 
   const handleCreditEvent = useCallback((eventId, credited) => {
     setIsSaving(true);
-    setPhases(prev => prev.map(phase => ({
-      ...phase,
-      events: phase.events.map(event =>
+    setSections(prev => prev.map(section => ({
+      ...section,
+      events: section.events.map(event =>
         event.id === eventId ? { ...event, credited } : event
       )
     })));
     setTimeout(() => setIsSaving(false), 500);
   }, []);
 
-  const handleCreditPhase = useCallback((phaseId, credited) => {
+  const handleCreditSection = useCallback((sectionId, credited) => {
     setIsSaving(true);
-    setPhases(prev => prev.map(phase =>
-      phase.id === phaseId
-        ? { ...phase, events: phase.events.map(e => ({ ...e, credited })) }
-        : phase
+    setSections(prev => prev.map(section =>
+      section.id === sectionId
+        ? { ...section, events: section.events.map(e => ({ ...e, credited })) }
+        : section
     ));
     setTimeout(() => setIsSaving(false), 500);
   }, []);
@@ -540,9 +540,9 @@ const CreditTransferDrawer = ({ isOpen, onClose, studentName = "Hello Gomora", p
 
   const handleReset = useCallback(() => {
     setIsSaving(true);
-    setPhases(prev => prev.map(phase => ({
-      ...phase,
-      events: phase.events.map(e => ({ ...e, credited: false }))
+    setSections(prev => prev.map(section => ({
+      ...section,
+      events: section.events.map(e => ({ ...e, credited: false }))
     })));
     setManualOverrides({});
     setShowResetDialog(false);
@@ -712,18 +712,18 @@ const CreditTransferDrawer = ({ isOpen, onClose, studentName = "Hello Gomora", p
             </div>
           </div>
 
-          {/* Phases */}
-          {filteredPhases.map((phase) => (
-            <div key={phase.id} className="border-b border-gray-200">
-              <PhaseHeader
-                phase={phase}
-                isExpanded={expandedPhases.has(phase.id)}
-                onToggle={() => handleTogglePhase(phase.id)}
-                onCreditChange={(credited) => handleCreditPhase(phase.id, credited)}
+          {/* Sections */}
+          {filteredSections.map((section) => (
+            <div key={section.id} className="border-b border-gray-200">
+              <SectionHeader
+                section={section}
+                isExpanded={expandedSections.has(section.id)}
+                onToggle={() => handleToggleSection(section.id)}
+                onCreditChange={(credited) => handleCreditSection(section.id, credited)}
               />
-              {expandedPhases.has(phase.id) && (
+              {expandedSections.has(section.id) && (
                 <div>
-                  {phase.events.map((event) => (
+                  {section.events.map((event) => (
                     <TrainingEventRow
                       key={event.id}
                       event={event}
@@ -735,7 +735,7 @@ const CreditTransferDrawer = ({ isOpen, onClose, studentName = "Hello Gomora", p
             </div>
           ))}
 
-          {filteredPhases.length === 0 && (
+          {filteredSections.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-gray-500">
               <SearchIcon className="w-8 h-8 mb-2 opacity-50" />
               <p className="text-sm">No training events match your search</p>

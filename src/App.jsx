@@ -410,7 +410,7 @@ const App = () => {
               <ul className="space-y-1 text-sm text-gray-600">
                 <li>• Gradient header with student info</li>
                 <li>• Search and filter functionality</li>
-                <li>• Collapsible phase sections</li>
+                <li>• Collapsible sections</li>
                 <li>• Progress badges and stats</li>
               </ul>
             </div>
@@ -427,7 +427,7 @@ const App = () => {
               <ul className="space-y-1 text-sm text-green-700">
                 <li>• Two-row VFR/IFR column headers</li>
                 <li>• Syllabus vs Credited summary</li>
-                <li>• Phase totals at bottom of each phase</li>
+                <li>• Section totals at bottom of each section</li>
                 <li>• Checkboxes on right side (like original)</li>
               </ul>
             </div>
@@ -457,7 +457,7 @@ const App = () => {
                 <h3 className="font-semibold text-gray-900">Modern Drawer</h3>
               </div>
               <p className="text-sm text-gray-600 ml-6">
-                Feature-rich design with search, collapsible phases, progress indicators, and modern styling.
+                Feature-rich design with search, collapsible sections, progress indicators, and modern styling.
               </p>
               <div className="ml-6 mt-2 flex flex-wrap gap-1">
                 <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Search</span>
@@ -488,7 +488,7 @@ const App = () => {
               </p>
               <div className="ml-6 mt-2 flex flex-wrap gap-1">
                 <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">VFR/IFR columns</span>
-                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Phase totals</span>
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Section totals</span>
               </div>
             </button>
           </div>
@@ -520,9 +520,9 @@ const App = () => {
                 <li>• <strong>VFR/IFR Column Groups</strong> - two-row headers matching wireframe spec</li>
                 <li>• <strong>Syllabus Row</strong> - total hours required for the training program</li>
                 <li>• <strong>Credited Row</strong> - editable inputs with [H:MM] format, Reset button</li>
-                <li>• <strong>Phase Structure</strong> - BIFM, Adv Instruments phases with totals</li>
+                <li>• <strong>Section Structure</strong> - BIFM, Adv Instruments sections with totals</li>
                 <li>• <strong>Lesson Links</strong> - clickable INST XX links (would navigate to lesson details)</li>
-                <li>• <strong>Right-side Checkboxes</strong> - phase and lesson selection on right</li>
+                <li>• <strong>Right-side Checkboxes</strong> - section and lesson selection on right</li>
                 <li>• <strong>Blue Highlighting</strong> - credited rows highlighted with blue bar</li>
                 <li>• <strong>Auto-save</strong> - changes save immediately</li>
               </ul>
@@ -530,14 +530,14 @@ const App = () => {
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• <strong>Credit Summary Table</strong> - shows Syllabus (Required), Credited, and Remaining</li>
                 <li>• <strong>Editable credited values</strong> - click any credited cell to manually override</li>
-                <li>• <strong>Phase-based organization</strong> - events grouped by training phases</li>
+                <li>• <strong>Section-based organization</strong> - events grouped by training sections</li>
                 <li>• <strong>Checkbox credit toggling</strong> - check/uncheck to credit lessons</li>
-                <li>• <strong>Phase-level selection</strong> - check phase header to credit all lessons in phase</li>
-                <li>• <strong>Visual indicators</strong> - Blue = credited, Orange = partial phase credit</li>
+                <li>• <strong>Section-level selection</strong> - check section header to credit all lessons in section</li>
+                <li>• <strong>Visual indicators</strong> - Blue = credited, Orange = partial section credit</li>
                 <li>• <strong>Auto-save</strong> - no save button needed, changes save immediately</li>
                 <li>• <strong>Search</strong> - filter training events by name</li>
                 <li>• <strong>Reset All</strong> - clear all credits with confirmation dialog</li>
-                <li>• <strong>Collapsible phases</strong> - click chevron to expand/collapse</li>
+                <li>• <strong>Collapsible sections</strong> - click chevron to expand/collapse</li>
               </ul>
             )}
           </div>

@@ -7,10 +7,10 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
  *
  * 1. EVENT-LEVEL CREDITING: Mark individual training events as credited
  * 2. OBJECTIVE TIME CREDITS: Manually specify time credited per objective type
- * 3. PHASE TIME CREDITS: Manually specify phase-level time credits (when phases have time configured)
+ * 3. SECTION TIME CREDITS: Manually specify section-level time credits (when sections have time configured)
  * 4. SYLLABUS-STYLE TIME GRID: Intuitive click-to-edit time inputs
  *
- * Prerequisite: This feature assumes times ARE configured on objectives and/or phases.
+ * Prerequisite: This feature assumes times ARE configured on objectives and/or sections.
  */
 
 // ============================================================================
@@ -31,17 +31,17 @@ const OBJECTIVE_TYPES = [
   { key: 'instrument', label: 'Instrument', shortLabel: 'Inst', color: 'violet', description: 'Actual instrument time' },
 ];
 
-// Phase configurations with their own time requirements
-const INITIAL_PHASES = [
+// Section configurations with their own time requirements
+const INITIAL_SECTIONS = [
   {
-    id: 'phase1',
-    name: 'Phase 1 - Basic Instrument Flight Maneuvers (BIFM)',
-    shortName: 'Phase 1 - BIFM',
+    id: 'section1',
+    name: 'Section 1 - Basic Instrument Flight Maneuvers (BIFM)',
+    shortName: 'Section 1 - BIFM',
     description: 'Introduction to instrument flight fundamentals',
     icon: '✈️',
-    // Phase-level time allocations (total time for the phase)
-    phaseTime: {
-      total: 720,  // 12 hours total phase time
+    // Section-level time allocations (total time for the section)
+    sectionTime: {
+      total: 720,  // 12 hours total section time
       credited: 0, // Will be calculated or manually set
     },
     events: [
@@ -54,13 +54,13 @@ const INITIAL_PHASES = [
     ]
   },
   {
-    id: 'phase2',
-    name: 'Phase 2 - Advanced Instrument Procedures',
-    shortName: 'Phase 2 - Adv Inst',
+    id: 'section2',
+    name: 'Section 2 - Advanced Instrument Procedures',
+    shortName: 'Section 2 - Adv Inst',
     description: 'Complex approaches and navigation',
     icon: '🎯',
-    phaseTime: {
-      total: 1440,  // 24 hours total phase time
+    sectionTime: {
+      total: 1440,  // 24 hours total section time
       credited: 0,
     },
     events: [
@@ -79,13 +79,13 @@ const INITIAL_PHASES = [
     ]
   },
   {
-    id: 'phase3',
-    name: 'Phase 3 - Multi-Engine Rating',
-    shortName: 'Phase 3 - ME',
+    id: 'section3',
+    name: 'Section 3 - Multi-Engine Rating',
+    shortName: 'Section 3 - ME',
     description: 'Multi-engine aircraft operations',
     icon: '🛩️',
-    phaseTime: {
-      total: 900,  // 15 hours total phase time
+    sectionTime: {
+      total: 900,  // 15 hours total section time
       credited: 0,
     },
     events: [
@@ -647,13 +647,13 @@ const ObjectiveTimeSummary = ({ creditedTotals, calculatedTotals, requirements, 
 };
 
 // ============================================================================
-// PHASE TIME CREDIT SECTION
+// SECTION TIME CREDIT SECTION
 // ============================================================================
 
-const PhaseTimeCreditCard = ({ phase, phaseTimeCredit, onPhaseTimeChange, calculatedPhaseTime }) => {
-  const hasTimeRequirement = phase.phaseTime && phase.phaseTime.total > 0;
-  const hasOverride = phaseTimeCredit !== calculatedPhaseTime;
-  const progress = hasTimeRequirement ? Math.min(100, (phaseTimeCredit / phase.phaseTime.total) * 100) : 0;
+const SectionTimeCreditCard = ({ section, sectionTimeCredit, onSectionTimeChange, calculatedSectionTime }) => {
+  const hasTimeRequirement = section.sectionTime && section.sectionTime.total > 0;
+  const hasOverride = sectionTimeCredit !== calculatedSectionTime;
+  const progress = hasTimeRequirement ? Math.min(100, (sectionTimeCredit / section.sectionTime.total) * 100) : 0;
 
   if (!hasTimeRequirement) return null;
 
@@ -669,10 +669,10 @@ const PhaseTimeCreditCard = ({ phase, phaseTimeCredit, onPhaseTimeChange, calcul
     `}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-lg">{phase.icon}</span>
+          <span className="text-lg">{section.icon}</span>
           <div>
-            <h4 className="text-xs font-bold text-gray-900">{phase.shortName}</h4>
-            <p className="text-[10px] text-gray-500">Phase time credit</p>
+            <h4 className="text-xs font-bold text-gray-900">{section.shortName}</h4>
+            <p className="text-[10px] text-gray-500">Section time credit</p>
           </div>
         </div>
         <ProgressRing
@@ -687,14 +687,14 @@ const PhaseTimeCreditCard = ({ phase, phaseTimeCredit, onPhaseTimeChange, calcul
       <div className="flex items-center justify-between gap-2">
         <div className="text-[10px] text-gray-500">
           <span>Required: </span>
-          <span className="font-mono font-medium text-gray-700">{formatTimeFriendly(phase.phaseTime.total)}</span>
+          <span className="font-mono font-medium text-gray-700">{formatTimeFriendly(section.sectionTime.total)}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[10px] text-gray-500">Credited:</span>
           <EditableTimeInput
-            value={phaseTimeCredit}
-            onChange={onPhaseTimeChange}
-            label={`${phase.shortName} time`}
+            value={sectionTimeCredit}
+            onChange={onSectionTimeChange}
+            label={`${section.shortName} time`}
             size="sm"
           />
         </div>
@@ -712,7 +712,7 @@ const PhaseTimeCreditCard = ({ phase, phaseTimeCredit, onPhaseTimeChange, calcul
 
       {hasOverride && (
         <p className="text-[9px] text-amber-600 mt-1 text-right">
-          Manual override (calculated: {formatTimeFriendly(calculatedPhaseTime)})
+          Manual override (calculated: {formatTimeFriendly(calculatedSectionTime)})
         </p>
       )}
     </div>
@@ -846,26 +846,26 @@ const EventCard = ({ event, onCredit, expanded, onToggleExpand, onEventTimeChang
 };
 
 // ============================================================================
-// PHASE SECTION COMPONENT
+// TRAINING SECTION COMPONENT
 // ============================================================================
 
-const PhaseSection = ({
-  phase,
+const TrainingSection = ({
+  section,
   isExpanded,
   onToggle,
   onCreditEvent,
-  onCreditPhase,
+  onCreditSection,
   status,
   expandedEvents,
   onToggleEventExpand,
   onEventTimeChange,
-  phaseTimeCredit,
-  onPhaseTimeChange,
-  calculatedPhaseTime,
+  sectionTimeCredit,
+  onSectionTimeChange,
+  calculatedSectionTime,
 }) => {
-  const creditedCount = phase.events.filter(e => e.credited).length;
-  const progress = (creditedCount / phase.events.length) * 100;
-  const hasPhaseTime = phase.phaseTime && phase.phaseTime.total > 0;
+  const creditedCount = section.events.filter(e => e.credited).length;
+  const progress = (creditedCount / section.events.length) * 100;
+  const hasSectionTime = section.sectionTime && section.sectionTime.total > 0;
 
   return (
     <div className={`
@@ -876,7 +876,7 @@ const PhaseSection = ({
           ? 'border-blue-200 shadow-lg shadow-blue-500/10'
           : 'border-gray-200 shadow-sm hover:shadow-md'}
     `}>
-      {/* Phase Header */}
+      {/* Section Header */}
       <button
         onClick={onToggle}
         className="w-full px-4 py-4 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white hover:from-gray-100 hover:to-gray-50 transition-all duration-200"
@@ -890,11 +890,11 @@ const PhaseSection = ({
                 ? 'bg-gradient-to-br from-blue-400 to-blue-500 shadow-lg shadow-blue-500/30'
                 : 'bg-gradient-to-br from-gray-200 to-gray-300'}
           `}>
-            {phase.icon}
+            {section.icon}
           </div>
           <div className="text-left">
-            <h3 className="text-sm font-bold text-gray-900">{phase.shortName}</h3>
-            <p className="text-xs text-gray-500">{phase.description}</p>
+            <h3 className="text-sm font-bold text-gray-900">{section.shortName}</h3>
+            <p className="text-xs text-gray-500">{section.description}</p>
           </div>
         </div>
 
@@ -902,7 +902,7 @@ const PhaseSection = ({
           {/* Progress Stats */}
           <div className="hidden sm:flex items-center gap-2">
             <div className="text-right">
-              <div className="text-sm font-bold text-gray-900">{creditedCount}/{phase.events.length}</div>
+              <div className="text-sm font-bold text-gray-900">{creditedCount}/{section.events.length}</div>
               <div className="text-[10px] text-gray-500">events</div>
             </div>
             <ProgressRing
@@ -918,7 +918,7 @@ const PhaseSection = ({
             <ModernCheckbox
               checked={status.allCredited}
               indeterminate={status.someCredited}
-              onChange={(checked) => onCreditPhase(phase.id, checked)}
+              onChange={(checked) => onCreditSection(section.id, checked)}
               size="md"
             />
           </div>
@@ -927,21 +927,21 @@ const PhaseSection = ({
         </div>
       </button>
 
-      {/* Phase Content */}
+      {/* Section Content */}
       <div className={`
         transition-all duration-300 ease-in-out overflow-hidden
         ${isExpanded ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'}
       `}>
         <div className="px-4 pb-4 space-y-3">
-          {/* Phase Time Credit (if phase has time configured) */}
-          {hasPhaseTime && (
+          {/* Section Time Credit (if section has time configured) */}
+          {hasSectionTime && (
             <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl p-4 border border-slate-200">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <ClockIcon />
-                  <span className="text-sm font-bold text-gray-900">Phase Time Credit</span>
+                  <span className="text-sm font-bold text-gray-900">Section Time Credit</span>
                 </div>
-                <Tooltip text="Manually override the total phase time credited">
+                <Tooltip text="Manually override the total section time credited">
                   <span className="text-gray-400 cursor-help"><InfoIcon /></span>
                 </Tooltip>
               </div>
@@ -950,20 +950,20 @@ const PhaseSection = ({
                 <div className="text-center p-3 bg-white rounded-lg border border-gray-200">
                   <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Required</div>
                   <div className="text-lg font-bold font-mono text-gray-900">
-                    {formatTime(phase.phaseTime.total)}
+                    {formatTime(section.sectionTime.total)}
                   </div>
-                  <div className="text-[10px] text-gray-400">{formatTimeFriendly(phase.phaseTime.total)}</div>
+                  <div className="text-[10px] text-gray-400">{formatTimeFriendly(section.sectionTime.total)}</div>
                 </div>
 
                 <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <div className="text-[10px] text-blue-700 uppercase tracking-wide mb-1">Credited</div>
                   <EditableTimeInput
-                    value={phaseTimeCredit}
-                    onChange={onPhaseTimeChange}
-                    label={`${phase.shortName} credited time`}
+                    value={sectionTimeCredit}
+                    onChange={onSectionTimeChange}
+                    label={`${section.shortName} credited time`}
                     size="md"
                   />
-                  {phaseTimeCredit !== calculatedPhaseTime && (
+                  {sectionTimeCredit !== calculatedSectionTime && (
                     <div className="text-[9px] text-amber-600 mt-1">manual override</div>
                   )}
                 </div>
@@ -971,11 +971,11 @@ const PhaseSection = ({
                 <div className="text-center p-3 bg-white rounded-lg border border-gray-200">
                   <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Remaining</div>
                   <div className={`text-lg font-bold font-mono ${
-                    phaseTimeCredit >= phase.phaseTime.total ? 'text-emerald-600' : 'text-gray-900'
+                    sectionTimeCredit >= section.sectionTime.total ? 'text-emerald-600' : 'text-gray-900'
                   }`}>
-                    {phaseTimeCredit >= phase.phaseTime.total
+                    {sectionTimeCredit >= section.sectionTime.total
                       ? '✓ Complete'
-                      : formatTime(phase.phaseTime.total - phaseTimeCredit)}
+                      : formatTime(section.sectionTime.total - sectionTimeCredit)}
                   </div>
                 </div>
               </div>
@@ -984,9 +984,9 @@ const PhaseSection = ({
               <div className="mt-3 h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
-                    phaseTimeCredit >= phase.phaseTime.total ? 'bg-emerald-500' : 'bg-blue-500'
+                    sectionTimeCredit >= section.sectionTime.total ? 'bg-emerald-500' : 'bg-blue-500'
                   }`}
-                  style={{ width: `${Math.min(100, (phaseTimeCredit / phase.phaseTime.total) * 100)}%` }}
+                  style={{ width: `${Math.min(100, (sectionTimeCredit / section.sectionTime.total) * 100)}%` }}
                 />
               </div>
             </div>
@@ -997,10 +997,10 @@ const PhaseSection = ({
             <div className="flex items-center justify-between px-1">
               <span className="text-xs font-semibold text-gray-700">Training Events</span>
               <span className="text-[10px] text-gray-500">
-                {creditedCount} of {phase.events.length} credited
+                {creditedCount} of {section.events.length} credited
               </span>
             </div>
-            {phase.events.map((event) => (
+            {section.events.map((event) => (
               <EventCard
                 key={event.id}
                 event={event}
@@ -1029,22 +1029,22 @@ const CreditTransferView = ({
   studentName = "Nuno Rodrigues",
 }) => {
   // State
-  const [phases, setPhases] = useState(INITIAL_PHASES);
+  const [sections, setSections] = useState(INITIAL_SECTIONS);
   const [objectiveOverrides, setObjectiveOverrides] = useState({});
-  const [phaseTimeOverrides, setPhaseTimeOverrides] = useState({});
+  const [sectionTimeOverrides, setSectionTimeOverrides] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
-  const [expandedPhases, setExpandedPhases] = useState(['phase1', 'phase2', 'phase3']);
+  const [expandedSections, setExpandedSections] = useState(['section1', 'section2', 'section3']);
   const [expandedEvents, setExpandedEvents] = useState(new Set());
-  const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'phases'
+  const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'sections'
 
   // Calculate credited totals from checked events (before overrides)
   const calculatedTotals = useMemo(() => {
     const totals = {};
     OBJECTIVE_TYPES.forEach(col => { totals[col.key] = 0; });
 
-    phases.forEach(phase => {
-      phase.events.forEach(event => {
+    sections.forEach(section => {
+      section.events.forEach(event => {
         if (event.credited) {
           OBJECTIVE_TYPES.forEach(col => {
             totals[col.key] += event[col.key] || 0;
@@ -1053,7 +1053,7 @@ const CreditTransferView = ({
       });
     });
     return totals;
-  }, [phases]);
+  }, [sections]);
 
   // Apply manual overrides to objective totals
   const creditedTotals = useMemo(() => {
@@ -1064,53 +1064,53 @@ const CreditTransferView = ({
     return totals;
   }, [calculatedTotals, objectiveOverrides]);
 
-  // Calculate phase time credits (from credited events)
-  const calculatedPhaseTimes = useMemo(() => {
+  // Calculate section time credits (from credited events)
+  const calculatedSectionTimes = useMemo(() => {
     const times = {};
-    phases.forEach(phase => {
+    sections.forEach(section => {
       let total = 0;
-      phase.events.forEach(event => {
+      section.events.forEach(event => {
         if (event.credited) {
           OBJECTIVE_TYPES.forEach(col => {
             total += event[col.key] || 0;
           });
         }
       });
-      times[phase.id] = total;
+      times[section.id] = total;
     });
     return times;
-  }, [phases]);
+  }, [sections]);
 
-  // Apply manual overrides to phase times
-  const phaseTimeCredits = useMemo(() => {
-    const times = { ...calculatedPhaseTimes };
-    Object.keys(phaseTimeOverrides).forEach(key => {
-      times[key] = phaseTimeOverrides[key];
+  // Apply manual overrides to section times
+  const sectionTimeCredits = useMemo(() => {
+    const times = { ...calculatedSectionTimes };
+    Object.keys(sectionTimeOverrides).forEach(key => {
+      times[key] = sectionTimeOverrides[key];
     });
     return times;
-  }, [calculatedPhaseTimes, phaseTimeOverrides]);
+  }, [calculatedSectionTimes, sectionTimeOverrides]);
 
   // Overall statistics
   const overallStats = useMemo(() => {
-    const totalEvents = phases.reduce((sum, p) => sum + p.events.length, 0);
-    const creditedEvents = phases.reduce((sum, p) => sum + p.events.filter(e => e.credited).length, 0);
-    const totalPhaseTime = phases.reduce((sum, p) => sum + (p.phaseTime?.total || 0), 0);
-    const creditedPhaseTime = Object.values(phaseTimeCredits).reduce((sum, t) => sum + t, 0);
+    const totalEvents = sections.reduce((sum, s) => sum + s.events.length, 0);
+    const creditedEvents = sections.reduce((sum, s) => sum + s.events.filter(e => e.credited).length, 0);
+    const totalSectionTime = sections.reduce((sum, s) => sum + (s.sectionTime?.total || 0), 0);
+    const creditedSectionTime = Object.values(sectionTimeCredits).reduce((sum, t) => sum + t, 0);
 
     return {
       totalEvents,
       creditedEvents,
       eventProgress: totalEvents > 0 ? (creditedEvents / totalEvents) * 100 : 0,
-      totalPhaseTime,
-      creditedPhaseTime,
-      phaseTimeProgress: totalPhaseTime > 0 ? (creditedPhaseTime / totalPhaseTime) * 100 : 0,
+      totalSectionTime,
+      creditedSectionTime,
+      sectionTimeProgress: totalSectionTime > 0 ? (creditedSectionTime / totalSectionTime) * 100 : 0,
     };
-  }, [phases, phaseTimeCredits]);
+  }, [sections, sectionTimeCredits]);
 
-  // Check phase credit status
-  const getPhaseStatus = useCallback((phase) => {
-    const creditedCount = phase.events.filter(e => e.credited).length;
-    const totalCount = phase.events.length;
+  // Check section credit status
+  const getSectionStatus = useCallback((section) => {
+    const creditedCount = section.events.filter(e => e.credited).length;
+    const totalCount = section.events.length;
     return {
       allCredited: creditedCount === totalCount,
       someCredited: creditedCount > 0 && creditedCount < totalCount,
@@ -1120,21 +1120,21 @@ const CreditTransferView = ({
   // Handlers
   const handleCreditEvent = useCallback((eventId, credited) => {
     setIsSaving(true);
-    setPhases(prev => prev.map(phase => ({
-      ...phase,
-      events: phase.events.map(event =>
+    setSections(prev => prev.map(section => ({
+      ...section,
+      events: section.events.map(event =>
         event.id === eventId ? { ...event, credited } : event
       )
     })));
     setTimeout(() => setIsSaving(false), 600);
   }, []);
 
-  const handleCreditPhase = useCallback((phaseId, credited) => {
+  const handleCreditSection = useCallback((sectionId, credited) => {
     setIsSaving(true);
-    setPhases(prev => prev.map(phase =>
-      phase.id === phaseId
-        ? { ...phase, events: phase.events.map(e => ({ ...e, credited })) }
-        : phase
+    setSections(prev => prev.map(section =>
+      section.id === sectionId
+        ? { ...section, events: section.events.map(e => ({ ...e, credited })) }
+        : section
     ));
     setTimeout(() => setIsSaving(false), 600);
   }, []);
@@ -1145,17 +1145,17 @@ const CreditTransferView = ({
     setTimeout(() => setIsSaving(false), 600);
   }, []);
 
-  const handlePhaseTimeOverride = useCallback((phaseId, value) => {
+  const handleSectionTimeOverride = useCallback((sectionId, value) => {
     setIsSaving(true);
-    setPhaseTimeOverrides(prev => ({ ...prev, [phaseId]: value }));
+    setSectionTimeOverrides(prev => ({ ...prev, [sectionId]: value }));
     setTimeout(() => setIsSaving(false), 600);
   }, []);
 
   const handleEventTimeChange = useCallback((eventId, objectiveKey, value) => {
     setIsSaving(true);
-    setPhases(prev => prev.map(phase => ({
-      ...phase,
-      events: phase.events.map(event =>
+    setSections(prev => prev.map(section => ({
+      ...section,
+      events: section.events.map(event =>
         event.id === eventId ? { ...event, [objectiveKey]: value } : event
       )
     })));
@@ -1164,21 +1164,21 @@ const CreditTransferView = ({
 
   const handleReset = useCallback(() => {
     setIsSaving(true);
-    setPhases(prev => prev.map(phase => ({
-      ...phase,
-      events: phase.events.map(e => ({ ...e, credited: false }))
+    setSections(prev => prev.map(section => ({
+      ...section,
+      events: section.events.map(e => ({ ...e, credited: false }))
     })));
     setObjectiveOverrides({});
-    setPhaseTimeOverrides({});
+    setSectionTimeOverrides({});
     setShowResetDialog(false);
     setTimeout(() => setIsSaving(false), 600);
   }, []);
 
-  const togglePhase = useCallback((phaseId) => {
-    setExpandedPhases(prev =>
-      prev.includes(phaseId)
-        ? prev.filter(id => id !== phaseId)
-        : [...prev, phaseId]
+  const toggleSection = useCallback((sectionId) => {
+    setExpandedSections(prev =>
+      prev.includes(sectionId)
+        ? prev.filter(id => id !== sectionId)
+        : [...prev, sectionId]
     );
   }, []);
 
@@ -1276,14 +1276,14 @@ const CreditTransferView = ({
 
               <div className="p-3 bg-white/5 rounded-xl backdrop-blur-sm">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-white/70">Phase Time</span>
-                  <ProgressRing progress={overallStats.phaseTimeProgress} size={36} strokeWidth={3} color="blue" />
+                  <span className="text-xs font-medium text-white/70">Section Time</span>
+                  <ProgressRing progress={overallStats.sectionTimeProgress} size={36} strokeWidth={3} color="blue" />
                 </div>
                 <div className="text-xl font-bold">
-                  {formatTimeFriendly(overallStats.creditedPhaseTime)} <span className="text-sm font-normal text-white/50">/ {formatTimeFriendly(overallStats.totalPhaseTime)}</span>
+                  {formatTimeFriendly(overallStats.creditedSectionTime)} <span className="text-sm font-normal text-white/50">/ {formatTimeFriendly(overallStats.totalSectionTime)}</span>
                 </div>
                 <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mt-2">
-                  <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${overallStats.phaseTimeProgress}%` }} />
+                  <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${overallStats.sectionTimeProgress}%` }} />
                 </div>
               </div>
             </div>
@@ -1302,9 +1302,9 @@ const CreditTransferView = ({
               Credit Summary
             </button>
             <button
-              onClick={() => setActiveTab('phases')}
+              onClick={() => setActiveTab('sections')}
               className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-all duration-200 ${
-                activeTab === 'phases'
+                activeTab === 'sections'
                   ? 'bg-gray-50 text-gray-900'
                   : 'text-white/70 hover:text-white hover:bg-white/10'
               }`}
@@ -1326,7 +1326,7 @@ const CreditTransferView = ({
                 onOverride={handleObjectiveOverride}
               />
 
-              {/* Phase Time Credits */}
+              {/* Section Time Credits */}
               <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                 <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
                   <div className="flex items-center gap-2">
@@ -1334,19 +1334,19 @@ const CreditTransferView = ({
                       <ClockIcon />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-gray-900">Phase Time Credits</h3>
-                      <p className="text-[10px] text-gray-500">Time credited per training phase</p>
+                      <h3 className="text-sm font-bold text-gray-900">Section Time Credits</h3>
+                      <p className="text-[10px] text-gray-500">Time credited per training section</p>
                     </div>
                   </div>
                 </div>
                 <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {phases.map(phase => (
-                    <PhaseTimeCreditCard
-                      key={phase.id}
-                      phase={phase}
-                      phaseTimeCredit={phaseTimeCredits[phase.id]}
-                      onPhaseTimeChange={(val) => handlePhaseTimeOverride(phase.id, val)}
-                      calculatedPhaseTime={calculatedPhaseTimes[phase.id]}
+                  {sections.map(section => (
+                    <SectionTimeCreditCard
+                      key={section.id}
+                      section={section}
+                      sectionTimeCredit={sectionTimeCredits[section.id]}
+                      onSectionTimeChange={(val) => handleSectionTimeOverride(section.id, val)}
+                      calculatedSectionTime={calculatedSectionTimes[section.id]}
                     />
                   ))}
                 </div>
@@ -1360,7 +1360,7 @@ const CreditTransferView = ({
                   <ul className="mt-1 text-xs text-amber-700 space-y-1">
                     <li>• <strong>Mark events as credited</strong> using checkboxes in the Training Events tab</li>
                     <li>• <strong>Override objective time</strong> by clicking any time value in the table above</li>
-                    <li>• <strong>Override phase time</strong> by clicking the credited time in each phase card</li>
+                    <li>• <strong>Override section time</strong> by clicking the credited time in each section card</li>
                     <li>• All changes are auto-saved instantly</li>
                   </ul>
                 </div>
@@ -1368,22 +1368,22 @@ const CreditTransferView = ({
             </>
           ) : (
             <>
-              {/* Phases List */}
-              {phases.map((phase) => (
-                <PhaseSection
-                  key={phase.id}
-                  phase={phase}
-                  isExpanded={expandedPhases.includes(phase.id)}
-                  onToggle={() => togglePhase(phase.id)}
+              {/* Sections List */}
+              {sections.map((section) => (
+                <TrainingSection
+                  key={section.id}
+                  section={section}
+                  isExpanded={expandedSections.includes(section.id)}
+                  onToggle={() => toggleSection(section.id)}
                   onCreditEvent={handleCreditEvent}
-                  onCreditPhase={handleCreditPhase}
-                  status={getPhaseStatus(phase)}
+                  onCreditSection={handleCreditSection}
+                  status={getSectionStatus(section)}
                   expandedEvents={expandedEvents}
                   onToggleEventExpand={toggleEventExpand}
                   onEventTimeChange={handleEventTimeChange}
-                  phaseTimeCredit={phaseTimeCredits[phase.id]}
-                  onPhaseTimeChange={(val) => handlePhaseTimeOverride(phase.id, val)}
-                  calculatedPhaseTime={calculatedPhaseTimes[phase.id]}
+                  sectionTimeCredit={sectionTimeCredits[section.id]}
+                  onSectionTimeChange={(val) => handleSectionTimeOverride(section.id, val)}
+                  calculatedSectionTime={calculatedSectionTimes[section.id]}
                 />
               ))}
             </>
