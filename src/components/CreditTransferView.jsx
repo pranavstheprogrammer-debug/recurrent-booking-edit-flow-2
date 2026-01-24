@@ -772,7 +772,7 @@ const TrainingSection = ({
                   <div className="text-[10px] text-gray-400">{formatTimeFriendly(section.sectionTime.total)}</div>
                 </div>
 
-                <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200 flex flex-col items-center">
                   <div className="text-[10px] text-blue-700 uppercase tracking-wide mb-1">Credited</div>
                   <EditableTimeInput
                     value={sectionTimeCredit}
