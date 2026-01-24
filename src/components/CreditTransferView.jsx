@@ -3,14 +3,13 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 /**
  * NORTÁVIA Credit Transfer View - PLAR (Prior Learning Assessment and Recognition)
  *
- * Redesigned with complete feature set:
+ * Features:
  *
  * 1. EVENT-LEVEL CREDITING: Mark individual training events as credited
- * 2. OBJECTIVE TIME CREDITS: Manually specify time credited per objective type
- * 3. SECTION TIME CREDITS: Manually specify section-level time credits (when sections have time configured)
- * 4. SYLLABUS-STYLE TIME GRID: Intuitive click-to-edit time inputs
+ * 2. SECTION TIME CREDITS: Manually specify section-level time credits (when sections have time configured)
+ * 3. INTUITIVE CLICK-TO-EDIT: Time inputs with easy manual override
  *
- * Prerequisite: This feature assumes times ARE configured on objectives and/or sections.
+ * Prerequisite: This feature assumes times ARE configured on sections.
  */
 
 // ============================================================================
@@ -96,20 +95,6 @@ const INITIAL_SECTIONS = [
     ]
   }
 ];
-
-// Syllabus requirements per objective type (in minutes)
-const SYLLABUS_REQUIREMENTS = {
-  vfrDual: 250,
-  ifrDual: 3000,
-  ifrHood: 0,
-  sim: 600,
-  xc: 500,
-  night: 300,
-  solo: 200,
-  pic: 400,
-  sic: 100,
-  instrument: 900,
-};
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -422,37 +407,6 @@ const EditableTimeInput = ({ value, onChange, label, placeholder = "0:00", size 
   );
 };
 
-// Time Grid Cell - For syllabus-style time grid
-const TimeGridCell = ({ objectiveType, value, onChange, isHeader = false, showCalculated = false, calculatedValue = 0 }) => {
-  const colors = getColorClasses(objectiveType.color);
-  const hasOverride = value !== calculatedValue && !isHeader;
-
-  return (
-    <div className={`
-      flex flex-col items-center p-2 rounded-lg transition-all duration-200
-      ${isHeader ? `${colors.bg} ${colors.border} border` : 'bg-gray-50 hover:bg-gray-100'}
-      ${hasOverride ? 'ring-2 ring-amber-400 ring-offset-1' : ''}
-    `}>
-      {isHeader && (
-        <span className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${colors.text}`}>
-          {objectiveType.shortLabel}
-        </span>
-      )}
-      <EditableTimeInput
-        value={value}
-        onChange={onChange}
-        label={objectiveType.label}
-        size="sm"
-      />
-      {showCalculated && hasOverride && (
-        <span className="text-[9px] text-amber-600 mt-0.5" title="Calculated from events">
-          (calc: {formatTime(calculatedValue)})
-        </span>
-      )}
-    </div>
-  );
-};
-
 // Reset Confirmation Dialog
 const ResetDialog = ({ isOpen, onClose, onConfirm }) => {
   if (!isOpen) return null;
@@ -504,143 +458,6 @@ const Tooltip = ({ children, text }) => {
       ">
         {text}
         <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
-      </div>
-    </div>
-  );
-};
-
-// ============================================================================
-// OBJECTIVE TIME SUMMARY SECTION
-// ============================================================================
-
-const ObjectiveTimeSummary = ({ creditedTotals, calculatedTotals, requirements, onOverride }) => {
-  const [showAllColumns, setShowAllColumns] = useState(false);
-
-  // Get columns that have any value (requirement or credited)
-  const activeColumns = OBJECTIVE_TYPES.filter(col =>
-    requirements[col.key] > 0 || creditedTotals[col.key] > 0
-  );
-
-  const displayColumns = showAllColumns ? OBJECTIVE_TYPES : activeColumns;
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      {/* Section Header */}
-      <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-              <ClockIcon />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-gray-900">Objective Time Credits</h3>
-              <p className="text-[10px] text-gray-500">Click any time value to manually edit</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setShowAllColumns(!showAllColumns)}
-            className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
-          >
-            {showAllColumns ? 'Show Active Only' : `Show All (${OBJECTIVE_TYPES.length})`}
-          </button>
-        </div>
-      </div>
-
-      {/* Time Grid - Syllabus Style */}
-      <div className="p-4">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr>
-                <th className="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide pb-2 pr-4 w-24">
-                  Type
-                </th>
-                {displayColumns.map(col => {
-                  const colors = getColorClasses(col.color);
-                  return (
-                    <th key={col.key} className="pb-2 px-1 min-w-[70px]">
-                      <Tooltip text={col.description}>
-                        <div className={`
-                          px-2 py-1 rounded-lg text-center cursor-help
-                          ${colors.bg} ${colors.border} border
-                        `}>
-                          <span className={`text-[10px] font-bold uppercase tracking-wide ${colors.text}`}>
-                            {col.shortLabel}
-                          </span>
-                        </div>
-                      </Tooltip>
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {/* Required Row */}
-              <tr className="border-t border-gray-100">
-                <td className="py-2 pr-4">
-                  <span className="text-xs font-medium text-gray-600">Required</span>
-                </td>
-                {displayColumns.map(col => (
-                  <td key={col.key} className="py-2 px-1 text-center">
-                    <span className="text-sm font-mono text-gray-500">
-                      {requirements[col.key] > 0 ? formatTime(requirements[col.key]) : '—'}
-                    </span>
-                  </td>
-                ))}
-              </tr>
-
-              {/* Credited Row - Editable */}
-              <tr className="border-t border-gray-100 bg-blue-50/30">
-                <td className="py-2 pr-4">
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs font-semibold text-blue-700">Credited</span>
-                    <Tooltip text="Click to manually override">
-                      <span className="text-blue-400"><InfoIcon /></span>
-                    </Tooltip>
-                  </div>
-                </td>
-                {displayColumns.map(col => {
-                  const hasOverride = creditedTotals[col.key] !== calculatedTotals[col.key];
-                  return (
-                    <td key={col.key} className="py-2 px-1">
-                      <div className="flex flex-col items-center">
-                        <EditableTimeInput
-                          value={creditedTotals[col.key]}
-                          onChange={(val) => onOverride(col.key, val)}
-                          label={col.label}
-                          size="sm"
-                        />
-                        {hasOverride && (
-                          <span className="text-[9px] text-amber-600 mt-0.5">
-                            manual
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-
-              {/* Remaining Row */}
-              <tr className="border-t border-gray-100">
-                <td className="py-2 pr-4">
-                  <span className="text-xs font-medium text-gray-600">Remaining</span>
-                </td>
-                {displayColumns.map(col => {
-                  const remaining = Math.max(0, requirements[col.key] - creditedTotals[col.key]);
-                  const isComplete = remaining === 0 && requirements[col.key] > 0;
-                  return (
-                    <td key={col.key} className="py-2 px-1 text-center">
-                      <span className={`text-sm font-mono ${isComplete ? 'text-emerald-600 font-semibold' : 'text-gray-500'}`}>
-                        {requirements[col.key] > 0 ? (isComplete ? '✓' : formatTime(remaining)) : '—'}
-                      </span>
-                    </td>
-                  );
-                })}
-              </tr>
-            </tbody>
-          </table>
-        </div>
       </div>
     </div>
   );
@@ -1030,39 +847,12 @@ const CreditTransferView = ({
 }) => {
   // State
   const [sections, setSections] = useState(INITIAL_SECTIONS);
-  const [objectiveOverrides, setObjectiveOverrides] = useState({});
   const [sectionTimeOverrides, setSectionTimeOverrides] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [expandedSections, setExpandedSections] = useState(['section1', 'section2', 'section3']);
   const [expandedEvents, setExpandedEvents] = useState(new Set());
   const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'sections'
-
-  // Calculate credited totals from checked events (before overrides)
-  const calculatedTotals = useMemo(() => {
-    const totals = {};
-    OBJECTIVE_TYPES.forEach(col => { totals[col.key] = 0; });
-
-    sections.forEach(section => {
-      section.events.forEach(event => {
-        if (event.credited) {
-          OBJECTIVE_TYPES.forEach(col => {
-            totals[col.key] += event[col.key] || 0;
-          });
-        }
-      });
-    });
-    return totals;
-  }, [sections]);
-
-  // Apply manual overrides to objective totals
-  const creditedTotals = useMemo(() => {
-    const totals = { ...calculatedTotals };
-    Object.keys(objectiveOverrides).forEach(key => {
-      totals[key] = objectiveOverrides[key];
-    });
-    return totals;
-  }, [calculatedTotals, objectiveOverrides]);
 
   // Calculate section time credits (from credited events)
   const calculatedSectionTimes = useMemo(() => {
@@ -1139,12 +929,6 @@ const CreditTransferView = ({
     setTimeout(() => setIsSaving(false), 600);
   }, []);
 
-  const handleObjectiveOverride = useCallback((key, value) => {
-    setIsSaving(true);
-    setObjectiveOverrides(prev => ({ ...prev, [key]: value }));
-    setTimeout(() => setIsSaving(false), 600);
-  }, []);
-
   const handleSectionTimeOverride = useCallback((sectionId, value) => {
     setIsSaving(true);
     setSectionTimeOverrides(prev => ({ ...prev, [sectionId]: value }));
@@ -1168,7 +952,6 @@ const CreditTransferView = ({
       ...section,
       events: section.events.map(e => ({ ...e, credited: false }))
     })));
-    setObjectiveOverrides({});
     setSectionTimeOverrides({});
     setShowResetDialog(false);
     setTimeout(() => setIsSaving(false), 600);
@@ -1318,14 +1101,6 @@ const CreditTransferView = ({
         <div className="flex-1 overflow-auto p-5 space-y-4">
           {activeTab === 'summary' ? (
             <>
-              {/* Objective Time Summary */}
-              <ObjectiveTimeSummary
-                creditedTotals={creditedTotals}
-                calculatedTotals={calculatedTotals}
-                requirements={SYLLABUS_REQUIREMENTS}
-                onOverride={handleObjectiveOverride}
-              />
-
               {/* Section Time Credits */}
               <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                 <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
@@ -1359,7 +1134,6 @@ const CreditTransferView = ({
                   <h4 className="text-sm font-semibold text-amber-800">How Credit Transfer Works</h4>
                   <ul className="mt-1 text-xs text-amber-700 space-y-1">
                     <li>• <strong>Mark events as credited</strong> using checkboxes in the Training Events tab</li>
-                    <li>• <strong>Override objective time</strong> by clicking any time value in the table above</li>
                     <li>• <strong>Override section time</strong> by clicking the credited time in each section card</li>
                     <li>• All changes are auto-saved instantly</li>
                   </ul>
