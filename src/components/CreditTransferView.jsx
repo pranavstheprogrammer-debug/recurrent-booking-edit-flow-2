@@ -1,68 +1,103 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 
 /**
- * Credit Transfer View - Scalable PLAR System for Flight Training
+ * NORTÁVIA Credit Transfer View - PLAR (Prior Learning Assessment and Recognition)
  *
- * Redesigned for unlimited objectives with:
- * - Responsive grid-based Credit Summary (handles 10+ objective types)
- * - Compact event cards with inline time tags (no wide tables)
- * - Expandable event details for full objective view
- * - Clean, uncluttered UI that scales within drawer bounds
+ * Redesigned with complete feature set:
+ *
+ * 1. EVENT-LEVEL CREDITING: Mark individual training events as credited
+ * 2. OBJECTIVE TIME CREDITS: Manually specify time credited per objective type
+ * 3. PHASE TIME CREDITS: Manually specify phase-level time credits (when phases have time configured)
+ * 4. SYLLABUS-STYLE TIME GRID: Intuitive click-to-edit time inputs
+ *
+ * Prerequisite: This feature assumes times ARE configured on objectives and/or phases.
  */
 
-// Extended time columns - demonstrating scalability with many objective types
-const TIME_COLUMNS = [
-  { key: 'vfrDual', label: 'VFR Dual', shortLabel: 'VFR Dual', category: 'VFR', color: 'emerald' },
-  { key: 'ifrDual', label: 'IFR Dual', shortLabel: 'IFR Dual', category: 'IFR', color: 'blue' },
-  { key: 'ifrHood', label: 'IFR Hood', shortLabel: 'Hood', category: 'IFR', color: 'indigo' },
-  { key: 'sim', label: 'Simulator', shortLabel: 'Sim', category: null, color: 'purple' },
-  { key: 'xc', label: 'Cross Country', shortLabel: 'XC', category: null, color: 'amber' },
-  { key: 'night', label: 'Night', shortLabel: 'Night', category: null, color: 'slate' },
-  { key: 'solo', label: 'Solo', shortLabel: 'Solo', category: null, color: 'rose' },
-  { key: 'pic', label: 'PIC', shortLabel: 'PIC', category: null, color: 'cyan' },
-  { key: 'sic', label: 'SIC', shortLabel: 'SIC', category: null, color: 'teal' },
-  { key: 'instrument', label: 'Instrument', shortLabel: 'Inst', category: 'IFR', color: 'violet' },
+// ============================================================================
+// DATA CONFIGURATION
+// ============================================================================
+
+// Objective time types - each represents a category of flight training time
+const OBJECTIVE_TYPES = [
+  { key: 'vfrDual', label: 'VFR Dual', shortLabel: 'VFR', color: 'emerald', description: 'Visual Flight Rules with instructor' },
+  { key: 'ifrDual', label: 'IFR Dual', shortLabel: 'IFR', color: 'blue', description: 'Instrument Flight Rules with instructor' },
+  { key: 'ifrHood', label: 'IFR Hood', shortLabel: 'Hood', color: 'indigo', description: 'Simulated instrument conditions' },
+  { key: 'sim', label: 'Simulator', shortLabel: 'Sim', color: 'purple', description: 'Flight simulator training' },
+  { key: 'xc', label: 'Cross Country', shortLabel: 'XC', color: 'amber', description: 'Cross country navigation' },
+  { key: 'night', label: 'Night', shortLabel: 'Night', color: 'slate', description: 'Night flying hours' },
+  { key: 'solo', label: 'Solo', shortLabel: 'Solo', color: 'rose', description: 'Solo flight time' },
+  { key: 'pic', label: 'PIC', shortLabel: 'PIC', color: 'cyan', description: 'Pilot in Command time' },
+  { key: 'sic', label: 'SIC', shortLabel: 'SIC', color: 'teal', description: 'Second in Command time' },
+  { key: 'instrument', label: 'Instrument', shortLabel: 'Inst', color: 'violet', description: 'Actual instrument time' },
 ];
 
-// Sample training data with extended objectives
+// Phase configurations with their own time requirements
 const INITIAL_PHASES = [
   {
     id: 'phase1',
-    name: 'Phase 1 - BIFM',
-    description: 'Basic Instrument Flight Maneuvers',
+    name: 'Phase 1 - Basic Instrument Flight Maneuvers (BIFM)',
+    shortName: 'Phase 1 - BIFM',
+    description: 'Introduction to instrument flight fundamentals',
     icon: '✈️',
+    // Phase-level time allocations (total time for the phase)
+    phaseTime: {
+      total: 720,  // 12 hours total phase time
+      credited: 0, // Will be calculated or manually set
+    },
     events: [
-      { id: 'inst01', name: 'INST 01', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 30, credited: false },
-      { id: 'inst02', name: 'INST 02', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 30, credited: true },
-      { id: 'inst03', name: 'INST 03', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 45, credited: true },
-      { id: 'inst04', name: 'INST 04', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 30, credited: false },
-      { id: 'inst05', name: 'INST 05', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 30, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 30, credited: false },
-      { id: 'inst06', name: 'INST 06', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 60, solo: 0, pic: 0, sic: 0, instrument: 45, credited: false },
+      { id: 'inst01', name: 'INST 01 - Basic Attitudes', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 30, credited: false },
+      { id: 'inst02', name: 'INST 02 - Straight & Level', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 30, credited: true },
+      { id: 'inst03', name: 'INST 03 - Turns & Climbs', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 45, credited: true },
+      { id: 'inst04', name: 'INST 04 - Descents', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 30, credited: false },
+      { id: 'inst05', name: 'INST 05 - Speed Changes', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 30, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 30, credited: false },
+      { id: 'inst06', name: 'INST 06 - Phase Check', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 60, solo: 0, pic: 0, sic: 0, instrument: 45, credited: false },
     ]
   },
   {
     id: 'phase2',
-    name: 'Phase 2 - Adv Instruments',
-    description: 'Advanced Instrument Procedures',
+    name: 'Phase 2 - Advanced Instrument Procedures',
+    shortName: 'Phase 2 - Adv Inst',
+    description: 'Complex approaches and navigation',
     icon: '🎯',
+    phaseTime: {
+      total: 1440,  // 24 hours total phase time
+      credited: 0,
+    },
     events: [
-      { id: 'inst07', name: 'INST 07', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 60, night: 0, solo: 0, pic: 30, sic: 0, instrument: 60, credited: true },
-      { id: 'inst08', name: 'INST 08', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 60, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 60, credited: false },
-      { id: 'inst09', name: 'INST 09', vfrDual: 30, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 30, solo: 0, pic: 0, sic: 30, instrument: 60, credited: true },
-      { id: 'inst10', name: 'INST 10', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 90, night: 0, solo: 60, pic: 60, sic: 0, instrument: 60, credited: true },
-      { id: 'inst11', name: 'INST 11', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 60, solo: 0, pic: 0, sic: 0, instrument: 60, credited: true },
-      { id: 'inst12', name: 'INST 12', vfrDual: 60, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 60, credited: true },
-      { id: 'inst13', name: 'INST 13', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 90, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 60, credited: false },
-      { id: 'inst14', name: 'INST 14', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 120, night: 90, solo: 0, pic: 90, sic: 0, instrument: 60, credited: false },
-      { id: 'inst15', name: 'INST 15', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 0, solo: 90, pic: 0, sic: 60, instrument: 60, credited: false },
-      { id: 'inst16', name: 'INST 16', vfrDual: 45, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 60, credited: false },
-      { id: 'inst17', name: 'INST 17', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 45, solo: 0, pic: 0, sic: 0, instrument: 60, credited: false },
-      { id: 'inst18', name: 'INST 18', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 0, solo: 0, pic: 45, sic: 0, instrument: 60, credited: false },
+      { id: 'inst07', name: 'INST 07 - ILS Approach', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 60, night: 0, solo: 0, pic: 30, sic: 0, instrument: 60, credited: true },
+      { id: 'inst08', name: 'INST 08 - VOR Approach', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 60, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 60, credited: false },
+      { id: 'inst09', name: 'INST 09 - NDB Approach', vfrDual: 30, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 30, solo: 0, pic: 0, sic: 30, instrument: 60, credited: true },
+      { id: 'inst10', name: 'INST 10 - GPS/RNAV', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 90, night: 0, solo: 60, pic: 60, sic: 0, instrument: 60, credited: true },
+      { id: 'inst11', name: 'INST 11 - Holding Patterns', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 60, solo: 0, pic: 0, sic: 0, instrument: 60, credited: true },
+      { id: 'inst12', name: 'INST 12 - Missed Approaches', vfrDual: 60, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 60, credited: true },
+      { id: 'inst13', name: 'INST 13 - DME Arc', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 90, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 60, credited: false },
+      { id: 'inst14', name: 'INST 14 - Cross Country', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 120, night: 90, solo: 0, pic: 90, sic: 0, instrument: 60, credited: false },
+      { id: 'inst15', name: 'INST 15 - Night Operations', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 0, solo: 90, pic: 0, sic: 60, instrument: 60, credited: false },
+      { id: 'inst16', name: 'INST 16 - Emergency Procedures', vfrDual: 45, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 60, credited: false },
+      { id: 'inst17', name: 'INST 17 - Partial Panel', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 45, solo: 0, pic: 0, sic: 0, instrument: 60, credited: false },
+      { id: 'inst18', name: 'INST 18 - Phase Check', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 0, night: 0, solo: 0, pic: 45, sic: 0, instrument: 60, credited: false },
     ]
   },
+  {
+    id: 'phase3',
+    name: 'Phase 3 - Multi-Engine Rating',
+    shortName: 'Phase 3 - ME',
+    description: 'Multi-engine aircraft operations',
+    icon: '🛩️',
+    phaseTime: {
+      total: 900,  // 15 hours total phase time
+      credited: 0,
+    },
+    events: [
+      { id: 'me01', name: 'ME 01 - Systems Ground', vfrDual: 60, ifrDual: 0, ifrHood: 0, sim: 120, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 0, credited: false },
+      { id: 'me02', name: 'ME 02 - Normal Operations', vfrDual: 90, ifrDual: 30, ifrHood: 0, sim: 0, xc: 0, night: 0, solo: 0, pic: 30, sic: 0, instrument: 0, credited: false },
+      { id: 'me03', name: 'ME 03 - Engine Out', vfrDual: 60, ifrDual: 30, ifrHood: 60, sim: 60, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 30, credited: false },
+      { id: 'me04', name: 'ME 04 - Final Check', vfrDual: 60, ifrDual: 30, ifrHood: 60, sim: 0, xc: 90, night: 0, solo: 0, pic: 60, sic: 0, instrument: 30, credited: false },
+    ]
+  }
 ];
 
-// Syllabus requirements (extended)
+// Syllabus requirements per objective type (in minutes)
 const SYLLABUS_REQUIREMENTS = {
   vfrDual: 250,
   ifrDual: 3000,
@@ -76,7 +111,11 @@ const SYLLABUS_REQUIREMENTS = {
   instrument: 900,
 };
 
-// Helper to format minutes to H:MM display
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+// Format minutes to H:MM display
 const formatTime = (minutes) => {
   if (minutes === null || minutes === undefined || minutes === 0) return '—';
   const h = Math.floor(minutes / 60);
@@ -84,52 +123,67 @@ const formatTime = (minutes) => {
   return `${h}:${m.toString().padStart(2, '0')}`;
 };
 
+// Format minutes to friendly display (e.g., "2h 30m")
+const formatTimeFriendly = (minutes) => {
+  if (minutes === null || minutes === undefined || minutes === 0) return '0h';
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (m === 0) return `${h}h`;
+  if (h === 0) return `${m}m`;
+  return `${h}h ${m}m`;
+};
+
 // Parse time string (H:MM) to minutes
 const parseTime = (timeStr) => {
+  if (!timeStr || timeStr === '—') return 0;
   const match = timeStr.match(/^(\d+)\s*:\s*(\d{1,2})$/);
   if (match) {
     const hours = parseInt(match[1], 10);
     const mins = parseInt(match[2], 10);
-    if (mins < 60) {
-      return hours * 60 + mins;
-    }
+    if (mins < 60) return hours * 60 + mins;
   }
+  // Try parsing as just minutes
+  const justMins = parseInt(timeStr, 10);
+  if (!isNaN(justMins)) return justMins;
   return null;
 };
 
-// Color mappings for objective tags
+// Get color classes for an objective type
 const getColorClasses = (color) => {
   const colors = {
-    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', pill: 'bg-emerald-100' },
-    blue: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', pill: 'bg-blue-100' },
-    indigo: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', pill: 'bg-indigo-100' },
-    purple: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', pill: 'bg-purple-100' },
-    amber: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', pill: 'bg-amber-100' },
-    slate: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', pill: 'bg-slate-100' },
-    rose: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', pill: 'bg-rose-100' },
-    cyan: { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200', pill: 'bg-cyan-100' },
-    teal: { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200', pill: 'bg-teal-100' },
-    violet: { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200', pill: 'bg-violet-100' },
+    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', pill: 'bg-emerald-100', ring: 'ring-emerald-500', gradient: 'from-emerald-500 to-emerald-600' },
+    blue: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', pill: 'bg-blue-100', ring: 'ring-blue-500', gradient: 'from-blue-500 to-blue-600' },
+    indigo: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', pill: 'bg-indigo-100', ring: 'ring-indigo-500', gradient: 'from-indigo-500 to-indigo-600' },
+    purple: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', pill: 'bg-purple-100', ring: 'ring-purple-500', gradient: 'from-purple-500 to-purple-600' },
+    amber: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', pill: 'bg-amber-100', ring: 'ring-amber-500', gradient: 'from-amber-500 to-amber-600' },
+    slate: { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-300', pill: 'bg-slate-200', ring: 'ring-slate-500', gradient: 'from-slate-500 to-slate-600' },
+    rose: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', pill: 'bg-rose-100', ring: 'ring-rose-500', gradient: 'from-rose-500 to-rose-600' },
+    cyan: { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200', pill: 'bg-cyan-100', ring: 'ring-cyan-500', gradient: 'from-cyan-500 to-cyan-600' },
+    teal: { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200', pill: 'bg-teal-100', ring: 'ring-teal-500', gradient: 'from-teal-500 to-teal-600' },
+    violet: { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200', pill: 'bg-violet-100', ring: 'ring-violet-500', gradient: 'from-violet-500 to-violet-600' },
   };
   return colors[color] || colors.blue;
 };
 
-// Icons
+// ============================================================================
+// ICON COMPONENTS
+// ============================================================================
+
 const CloseIcon = () => (
   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
   </svg>
 );
 
-const CheckIcon = () => (
-  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+const CheckIcon = ({ className = "w-3.5 h-3.5" }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
   </svg>
 );
 
-const ChevronIcon = ({ isOpen }) => (
+const ChevronIcon = ({ isOpen, className = "w-5 h-5" }) => (
   <svg
-    className={`w-5 h-5 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+    className={`${className} transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
     fill="none"
     viewBox="0 0 24 24"
     stroke="currentColor"
@@ -149,15 +203,27 @@ const ChevronRightIcon = ({ isOpen }) => (
   </svg>
 );
 
-const SaveIcon = () => (
-  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-  </svg>
-);
-
 const RefreshIcon = () => (
   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+  </svg>
+);
+
+const ClockIcon = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const PencilIcon = () => (
+  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+  </svg>
+);
+
+const InfoIcon = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 );
 
@@ -167,13 +233,17 @@ const UserIcon = () => (
   </svg>
 );
 
-const PlaneIcon = () => (
-  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+const SaveIcon = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
   </svg>
 );
 
-// Progress Ring Component
+// ============================================================================
+// UI COMPONENTS
+// ============================================================================
+
+// Progress Ring - Circular progress indicator
 const ProgressRing = ({ progress, size = 48, strokeWidth = 4, color = 'blue' }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -184,6 +254,7 @@ const ProgressRing = ({ progress, size = 48, strokeWidth = 4, color = 'blue' }) 
     emerald: 'stroke-emerald-500',
     amber: 'stroke-amber-500',
     purple: 'stroke-purple-500',
+    slate: 'stroke-slate-500',
   };
 
   return (
@@ -218,9 +289,9 @@ const ProgressRing = ({ progress, size = 48, strokeWidth = 4, color = 'blue' }) 
   );
 };
 
-// Modern Toggle Checkbox
-const ModernCheckbox = ({ checked, onChange, indeterminate = false, size = 'md' }) => {
-  const ref = React.useRef(null);
+// Modern Checkbox with indeterminate state support
+const ModernCheckbox = ({ checked, onChange, indeterminate = false, size = 'md', disabled = false }) => {
+  const ref = useRef(null);
 
   useEffect(() => {
     if (ref.current) {
@@ -235,13 +306,14 @@ const ModernCheckbox = ({ checked, onChange, indeterminate = false, size = 'md' 
   };
 
   return (
-    <label className="inline-flex items-center cursor-pointer group">
+    <label className={`inline-flex items-center ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} group`}>
       <input
         ref={ref}
         type="checkbox"
         checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
+        onChange={(e) => !disabled && onChange(e.target.checked)}
         className="sr-only"
+        disabled={disabled}
       />
       <div className={`
         ${sizeClasses[size]} rounded-md border-2 flex items-center justify-center
@@ -250,81 +322,134 @@ const ModernCheckbox = ({ checked, onChange, indeterminate = false, size = 'md' 
           ? 'bg-gradient-to-br from-blue-500 to-blue-600 border-blue-500 shadow-lg shadow-blue-500/30 scale-105'
           : indeterminate
             ? 'bg-gradient-to-br from-amber-400 to-amber-500 border-amber-400 shadow-lg shadow-amber-400/30'
-            : 'bg-white border-gray-300 group-hover:border-blue-400 group-hover:shadow-md'}
+            : disabled
+              ? 'bg-gray-100 border-gray-300'
+              : 'bg-white border-gray-300 group-hover:border-blue-400 group-hover:shadow-md'}
       `}>
-        {checked && (
-          <CheckIcon />
-        )}
-        {indeterminate && !checked && (
-          <div className="w-3 h-0.5 bg-white rounded-full" />
-        )}
+        {checked && <span className="text-white"><CheckIcon /></span>}
+        {indeterminate && !checked && <div className="w-3 h-0.5 bg-white rounded-full" />}
       </div>
     </label>
   );
 };
 
-// Editable Time Input for summary cards
-const EditableTimeInput = ({ value, onChange, disabled = false }) => {
+// Editable Time Input - Click to edit, similar to syllabus time grid
+const EditableTimeInput = ({ value, onChange, label, placeholder = "0:00", size = 'md', showLabel = true }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localValue, setLocalValue] = useState(formatTime(value) || '0:00');
+  const inputRef = useRef(null);
 
   useEffect(() => {
     if (!isEditing) {
-      setLocalValue(formatTime(value) || '0:00');
+      setLocalValue(value > 0 ? formatTime(value) : '0:00');
     }
   }, [value, isEditing]);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.select();
+    }
+  }, [isEditing]);
 
   const handleBlur = () => {
     setIsEditing(false);
     const parsed = parseTime(localValue);
     if (parsed !== null && parsed !== value) {
       onChange(parsed);
-    } else if (localValue.trim() === '' || localValue === '0:00') {
+    } else if (localValue.trim() === '' || localValue === '0:00' || localValue === '—') {
       onChange(0);
     } else {
-      setLocalValue(formatTime(value) || '0:00');
+      setLocalValue(value > 0 ? formatTime(value) : '0:00');
     }
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') e.target.blur();
     if (e.key === 'Escape') {
-      setLocalValue(formatTime(value) || '0:00');
+      setLocalValue(value > 0 ? formatTime(value) : '0:00');
       setIsEditing(false);
     }
   };
 
-  if (disabled) {
-    return (
-      <span className="text-lg font-bold text-gray-700 tabular-nums">
-        {formatTime(value) || '—'}
-      </span>
-    );
-  }
+  const sizeStyles = {
+    sm: 'text-sm w-14 px-1.5 py-0.5',
+    md: 'text-base w-16 px-2 py-1',
+    lg: 'text-lg w-20 px-2.5 py-1.5',
+  };
 
   if (isEditing) {
     return (
-      <input
-        type="text"
-        value={localValue}
-        onChange={(e) => setLocalValue(e.target.value)}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        autoFocus
-        className="w-16 px-2 py-1 text-center text-sm font-bold border-2 border-blue-500 rounded-lg
-                   focus:outline-none focus:ring-4 focus:ring-blue-500/20 bg-white shadow-lg"
-      />
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type="text"
+          value={localValue}
+          onChange={(e) => setLocalValue(e.target.value)}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          className={`
+            ${sizeStyles[size]} text-center font-mono font-semibold
+            border-2 border-blue-500 rounded-lg bg-white
+            focus:outline-none focus:ring-4 focus:ring-blue-500/20
+            shadow-lg transition-all duration-200
+          `}
+          autoFocus
+        />
+      </div>
     );
   }
 
   return (
     <button
       onClick={() => setIsEditing(true)}
-      className="text-lg font-bold text-gray-900 tabular-nums hover:text-blue-600
-                 transition-colors duration-200 cursor-pointer"
+      className={`
+        group relative ${sizeStyles[size]} text-center font-mono font-semibold
+        bg-white border border-gray-200 rounded-lg
+        hover:border-blue-400 hover:bg-blue-50 hover:shadow-md
+        transition-all duration-200 cursor-pointer
+        flex items-center justify-center gap-1
+      `}
+      title={label ? `Edit ${label}` : 'Click to edit time'}
     >
-      {formatTime(value) || '—'}
+      <span className={value > 0 ? 'text-gray-900' : 'text-gray-400'}>
+        {value > 0 ? formatTime(value) : placeholder}
+      </span>
+      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+        <PencilIcon />
+      </span>
     </button>
+  );
+};
+
+// Time Grid Cell - For syllabus-style time grid
+const TimeGridCell = ({ objectiveType, value, onChange, isHeader = false, showCalculated = false, calculatedValue = 0 }) => {
+  const colors = getColorClasses(objectiveType.color);
+  const hasOverride = value !== calculatedValue && !isHeader;
+
+  return (
+    <div className={`
+      flex flex-col items-center p-2 rounded-lg transition-all duration-200
+      ${isHeader ? `${colors.bg} ${colors.border} border` : 'bg-gray-50 hover:bg-gray-100'}
+      ${hasOverride ? 'ring-2 ring-amber-400 ring-offset-1' : ''}
+    `}>
+      {isHeader && (
+        <span className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${colors.text}`}>
+          {objectiveType.shortLabel}
+        </span>
+      )}
+      <EditableTimeInput
+        value={value}
+        onChange={onChange}
+        label={objectiveType.label}
+        size="sm"
+      />
+      {showCalculated && hasOverride && (
+        <span className="text-[9px] text-amber-600 mt-0.5" title="Calculated from events">
+          (calc: {formatTime(calculatedValue)})
+        </span>
+      )}
+    </div>
   );
 };
 
@@ -334,17 +459,14 @@ const ResetDialog = ({ isOpen, onClose, onConfirm }) => {
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fadeIn"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full animate-scaleIn">
-        <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+        <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center text-red-600">
           <RefreshIcon />
         </div>
         <h3 className="text-xl font-bold text-gray-900 text-center mb-2">Reset All Credits?</h3>
         <p className="text-sm text-gray-500 text-center mb-6">
-          This will uncheck all credited lessons and reset all credited totals to zero. This action cannot be undone.
+          This will uncheck all credited events and reset all time values to zero. This action cannot be undone.
         </p>
         <div className="flex gap-3">
           <button
@@ -368,76 +490,258 @@ const ResetDialog = ({ isOpen, onClose, onConfirm }) => {
   );
 };
 
-// Credit Summary Card - single objective card in the grid
-const CreditSummaryCard = ({ column, requirement, credited, onOverride }) => {
-  const colors = getColorClasses(column.color);
-  const hasRequirement = requirement > 0;
-  const hasCredited = credited > 0;
+// Tooltip Component
+const Tooltip = ({ children, text }) => {
+  return (
+    <div className="group relative inline-flex">
+      {children}
+      <div className="
+        absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+        px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded-lg
+        opacity-0 invisible group-hover:opacity-100 group-hover:visible
+        transition-all duration-200 whitespace-nowrap z-50
+        pointer-events-none
+      ">
+        {text}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// OBJECTIVE TIME SUMMARY SECTION
+// ============================================================================
+
+const ObjectiveTimeSummary = ({ creditedTotals, calculatedTotals, requirements, onOverride }) => {
+  const [showAllColumns, setShowAllColumns] = useState(false);
+
+  // Get columns that have any value (requirement or credited)
+  const activeColumns = OBJECTIVE_TYPES.filter(col =>
+    requirements[col.key] > 0 || creditedTotals[col.key] > 0
+  );
+
+  const displayColumns = showAllColumns ? OBJECTIVE_TYPES : activeColumns;
 
   return (
-    <div className={`
-      p-3 rounded-xl border transition-all duration-200
-      ${hasCredited ? `${colors.bg} ${colors.border}` : 'bg-gray-50 border-gray-200'}
-      hover:shadow-md
-    `}>
-      <div className="flex items-center justify-between mb-2">
-        <span className={`text-xs font-semibold uppercase tracking-wide ${hasCredited ? colors.text : 'text-gray-500'}`}>
-          {column.shortLabel}
-        </span>
-        {column.category && (
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${colors.pill} ${colors.text}`}>
-            {column.category}
-          </span>
-        )}
-      </div>
-      <div className="space-y-1">
-        <div className="flex justify-between items-center">
-          <span className="text-[10px] text-gray-400 uppercase">Req</span>
-          <span className="text-xs text-gray-500 tabular-nums">
-            {hasRequirement ? formatTime(requirement) : '—'}
-          </span>
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      {/* Section Header */}
+      <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <ClockIcon />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-gray-900">Objective Time Credits</h3>
+              <p className="text-[10px] text-gray-500">Click any time value to manually edit</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowAllColumns(!showAllColumns)}
+            className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            {showAllColumns ? 'Show Active Only' : `Show All (${OBJECTIVE_TYPES.length})`}
+          </button>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-[10px] text-gray-400 uppercase">Cred</span>
-          <EditableTimeInput
-            value={credited}
-            onChange={onOverride}
-          />
+      </div>
+
+      {/* Time Grid - Syllabus Style */}
+      <div className="p-4">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide pb-2 pr-4 w-24">
+                  Type
+                </th>
+                {displayColumns.map(col => {
+                  const colors = getColorClasses(col.color);
+                  return (
+                    <th key={col.key} className="pb-2 px-1 min-w-[70px]">
+                      <Tooltip text={col.description}>
+                        <div className={`
+                          px-2 py-1 rounded-lg text-center cursor-help
+                          ${colors.bg} ${colors.border} border
+                        `}>
+                          <span className={`text-[10px] font-bold uppercase tracking-wide ${colors.text}`}>
+                            {col.shortLabel}
+                          </span>
+                        </div>
+                      </Tooltip>
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {/* Required Row */}
+              <tr className="border-t border-gray-100">
+                <td className="py-2 pr-4">
+                  <span className="text-xs font-medium text-gray-600">Required</span>
+                </td>
+                {displayColumns.map(col => (
+                  <td key={col.key} className="py-2 px-1 text-center">
+                    <span className="text-sm font-mono text-gray-500">
+                      {requirements[col.key] > 0 ? formatTime(requirements[col.key]) : '—'}
+                    </span>
+                  </td>
+                ))}
+              </tr>
+
+              {/* Credited Row - Editable */}
+              <tr className="border-t border-gray-100 bg-blue-50/30">
+                <td className="py-2 pr-4">
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-semibold text-blue-700">Credited</span>
+                    <Tooltip text="Click to manually override">
+                      <span className="text-blue-400"><InfoIcon /></span>
+                    </Tooltip>
+                  </div>
+                </td>
+                {displayColumns.map(col => {
+                  const hasOverride = creditedTotals[col.key] !== calculatedTotals[col.key];
+                  return (
+                    <td key={col.key} className="py-2 px-1">
+                      <div className="flex flex-col items-center">
+                        <EditableTimeInput
+                          value={creditedTotals[col.key]}
+                          onChange={(val) => onOverride(col.key, val)}
+                          label={col.label}
+                          size="sm"
+                        />
+                        {hasOverride && (
+                          <span className="text-[9px] text-amber-600 mt-0.5">
+                            manual
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+
+              {/* Remaining Row */}
+              <tr className="border-t border-gray-100">
+                <td className="py-2 pr-4">
+                  <span className="text-xs font-medium text-gray-600">Remaining</span>
+                </td>
+                {displayColumns.map(col => {
+                  const remaining = Math.max(0, requirements[col.key] - creditedTotals[col.key]);
+                  const isComplete = remaining === 0 && requirements[col.key] > 0;
+                  return (
+                    <td key={col.key} className="py-2 px-1 text-center">
+                      <span className={`text-sm font-mono ${isComplete ? 'text-emerald-600 font-semibold' : 'text-gray-500'}`}>
+                        {requirements[col.key] > 0 ? (isComplete ? '✓' : formatTime(remaining)) : '—'}
+                      </span>
+                    </td>
+                  );
+                })}
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 };
 
-// Time Tag - compact inline display of a time value
-const TimeTag = ({ column, value }) => {
-  const colors = getColorClasses(column.color);
+// ============================================================================
+// PHASE TIME CREDIT SECTION
+// ============================================================================
+
+const PhaseTimeCreditCard = ({ phase, phaseTimeCredit, onPhaseTimeChange, calculatedPhaseTime }) => {
+  const hasTimeRequirement = phase.phaseTime && phase.phaseTime.total > 0;
+  const hasOverride = phaseTimeCredit !== calculatedPhaseTime;
+  const progress = hasTimeRequirement ? Math.min(100, (phaseTimeCredit / phase.phaseTime.total) * 100) : 0;
+
+  if (!hasTimeRequirement) return null;
+
   return (
-    <span className={`
-      inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
-      ${colors.pill} ${colors.text}
+    <div className={`
+      p-3 rounded-xl border transition-all duration-200
+      ${progress >= 100
+        ? 'bg-emerald-50 border-emerald-200'
+        : progress > 0
+          ? 'bg-blue-50 border-blue-200'
+          : 'bg-gray-50 border-gray-200'}
+      ${hasOverride ? 'ring-2 ring-amber-400 ring-offset-1' : ''}
     `}>
-      <span className="opacity-70">{column.shortLabel}</span>
-      <span className="font-bold tabular-nums">{formatTime(value)}</span>
-    </span>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{phase.icon}</span>
+          <div>
+            <h4 className="text-xs font-bold text-gray-900">{phase.shortName}</h4>
+            <p className="text-[10px] text-gray-500">Phase time credit</p>
+          </div>
+        </div>
+        <ProgressRing
+          progress={progress}
+          size={36}
+          strokeWidth={3}
+          color={progress >= 100 ? 'emerald' : 'blue'}
+        />
+      </div>
+
+      {/* Time Display */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[10px] text-gray-500">
+          <span>Required: </span>
+          <span className="font-mono font-medium text-gray-700">{formatTimeFriendly(phase.phaseTime.total)}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-gray-500">Credited:</span>
+          <EditableTimeInput
+            value={phaseTimeCredit}
+            onChange={onPhaseTimeChange}
+            label={`${phase.shortName} time`}
+            size="sm"
+          />
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="mt-2 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${
+            progress >= 100 ? 'bg-emerald-500' : 'bg-blue-500'
+          }`}
+          style={{ width: `${Math.min(100, progress)}%` }}
+        />
+      </div>
+
+      {hasOverride && (
+        <p className="text-[9px] text-amber-600 mt-1 text-right">
+          Manual override (calculated: {formatTimeFriendly(calculatedPhaseTime)})
+        </p>
+      )}
+    </div>
   );
 };
 
-// Event Card - compact display of a single event
-const EventCard = ({ event, onCredit, expanded, onToggleExpand }) => {
+// ============================================================================
+// EVENT CARD COMPONENT
+// ============================================================================
+
+const EventCard = ({ event, onCredit, expanded, onToggleExpand, onEventTimeChange }) => {
   // Get non-zero time columns for this event
   const nonZeroTimes = useMemo(() => {
-    return TIME_COLUMNS.filter(col => event[col.key] > 0);
+    return OBJECTIVE_TYPES.filter(col => event[col.key] > 0);
+  }, [event]);
+
+  // Calculate total event time
+  const totalEventTime = useMemo(() => {
+    return OBJECTIVE_TYPES.reduce((sum, col) => sum + (event[col.key] || 0), 0);
   }, [event]);
 
   return (
     <div className={`
       rounded-xl border transition-all duration-200 overflow-hidden
       ${event.credited
-        ? 'bg-blue-50/50 border-blue-200 shadow-sm'
+        ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 shadow-sm'
         : 'bg-white border-gray-200 hover:border-gray-300'}
     `}>
-      {/* Main row - always visible */}
+      {/* Main Row - Always Visible */}
       <div className="flex items-center gap-3 px-4 py-3">
         {/* Checkbox */}
         <div onClick={(e) => e.stopPropagation()}>
@@ -448,54 +752,89 @@ const EventCard = ({ event, onCredit, expanded, onToggleExpand }) => {
           />
         </div>
 
-        {/* Event name and times */}
+        {/* Event Info */}
         <button
           onClick={onToggleExpand}
           className="flex-1 flex items-center gap-3 min-w-0 text-left"
         >
           <ChevronRightIcon isOpen={expanded} />
-          <span className={`
-            font-semibold text-sm shrink-0
-            ${event.credited ? 'text-blue-700' : 'text-gray-700'}
-          `}>
-            {event.name}
-          </span>
-
-          {/* Inline time tags - show first 3-4 non-zero values */}
-          <div className="flex flex-wrap gap-1.5 min-w-0">
-            {nonZeroTimes.slice(0, 4).map(col => (
-              <TimeTag key={col.key} column={col} value={event[col.key]} />
-            ))}
-            {nonZeroTimes.length > 4 && (
-              <span className="text-xs text-gray-400 px-2 py-0.5">
-                +{nonZeroTimes.length - 4} more
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className={`
+                font-semibold text-sm truncate
+                ${event.credited ? 'text-blue-700' : 'text-gray-700'}
+              `}>
+                {event.name}
               </span>
-            )}
+              {event.credited && (
+                <span className="flex-shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700">
+                  <CheckIcon className="w-3 h-3" />
+                  Credited
+                </span>
+              )}
+            </div>
+
+            {/* Compact Time Tags */}
+            <div className="flex flex-wrap gap-1 mt-1">
+              {nonZeroTimes.slice(0, 3).map(col => {
+                const colors = getColorClasses(col.color);
+                return (
+                  <span
+                    key={col.key}
+                    className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium ${colors.pill} ${colors.text}`}
+                  >
+                    <span className="opacity-70">{col.shortLabel}</span>
+                    <span className="font-bold font-mono">{formatTime(event[col.key])}</span>
+                  </span>
+                );
+              })}
+              {nonZeroTimes.length > 3 && (
+                <span className="text-[10px] text-gray-400 px-1">
+                  +{nonZeroTimes.length - 3} more
+                </span>
+              )}
+            </div>
           </div>
         </button>
+
+        {/* Total Time */}
+        <div className="text-right flex-shrink-0">
+          <div className="text-xs text-gray-500">Total</div>
+          <div className={`text-sm font-bold font-mono ${event.credited ? 'text-blue-700' : 'text-gray-700'}`}>
+            {formatTime(totalEventTime)}
+          </div>
+        </div>
       </div>
 
-      {/* Expanded details - all objectives in vertical list */}
+      {/* Expanded Details - Full Time Grid */}
       {expanded && (
-        <div className="px-4 pb-4 pt-2 border-t border-gray-100">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {TIME_COLUMNS.map(col => {
+        <div className="px-4 pb-4 pt-2 border-t border-gray-100/50">
+          <div className="mb-2">
+            <span className="text-[10px] text-gray-500 uppercase tracking-wide font-semibold">
+              Objective Time Breakdown (click to edit)
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+            {OBJECTIVE_TYPES.map(col => {
               const value = event[col.key];
               const colors = getColorClasses(col.color);
               return (
                 <div
                   key={col.key}
                   className={`
-                    flex items-center justify-between p-2 rounded-lg
-                    ${value > 0 ? colors.bg : 'bg-gray-50'}
+                    flex flex-col items-center p-2 rounded-lg transition-all
+                    ${value > 0 ? `${colors.bg} ${colors.border} border` : 'bg-gray-50 border border-gray-100'}
                   `}
                 >
-                  <span className={`text-xs font-medium ${value > 0 ? colors.text : 'text-gray-400'}`}>
+                  <span className={`text-[10px] font-semibold mb-1 ${value > 0 ? colors.text : 'text-gray-400'}`}>
                     {col.shortLabel}
                   </span>
-                  <span className={`text-sm font-bold tabular-nums ${value > 0 ? colors.text : 'text-gray-300'}`}>
-                    {value > 0 ? formatTime(value) : '—'}
-                  </span>
+                  <EditableTimeInput
+                    value={value}
+                    onChange={(val) => onEventTimeChange(event.id, col.key, val)}
+                    label={`${event.name} ${col.label}`}
+                    size="sm"
+                  />
                 </div>
               );
             })}
@@ -506,8 +845,11 @@ const EventCard = ({ event, onCredit, expanded, onToggleExpand }) => {
   );
 };
 
-// Phase Card Component
-const PhaseCard = ({
+// ============================================================================
+// PHASE SECTION COMPONENT
+// ============================================================================
+
+const PhaseSection = ({
   phase,
   isExpanded,
   onToggle,
@@ -515,10 +857,15 @@ const PhaseCard = ({
   onCreditPhase,
   status,
   expandedEvents,
-  onToggleEventExpand
+  onToggleEventExpand,
+  onEventTimeChange,
+  phaseTimeCredit,
+  onPhaseTimeChange,
+  calculatedPhaseTime,
 }) => {
   const creditedCount = phase.events.filter(e => e.credited).length;
   const progress = (creditedCount / phase.events.length) * 100;
+  const hasPhaseTime = phase.phaseTime && phase.phaseTime.total > 0;
 
   return (
     <div className={`
@@ -546,17 +893,17 @@ const PhaseCard = ({
             {phase.icon}
           </div>
           <div className="text-left">
-            <h3 className="text-sm font-bold text-gray-900">{phase.name}</h3>
+            <h3 className="text-sm font-bold text-gray-900">{phase.shortName}</h3>
             <p className="text-xs text-gray-500">{phase.description}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Progress Indicator */}
+          {/* Progress Stats */}
           <div className="hidden sm:flex items-center gap-2">
             <div className="text-right">
               <div className="text-sm font-bold text-gray-900">{creditedCount}/{phase.events.length}</div>
-              <div className="text-[10px] text-gray-500">completed</div>
+              <div className="text-[10px] text-gray-500">events</div>
             </div>
             <ProgressRing
               progress={progress}
@@ -580,28 +927,100 @@ const PhaseCard = ({
         </div>
       </button>
 
-      {/* Phase Content - Event Cards */}
+      {/* Phase Content */}
       <div className={`
         transition-all duration-300 ease-in-out overflow-hidden
-        ${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}
+        ${isExpanded ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'}
       `}>
-        <div className="px-4 pb-4 space-y-2">
-          {phase.events.map((event) => (
-            <EventCard
-              key={event.id}
-              event={event}
-              onCredit={onCreditEvent}
-              expanded={expandedEvents.has(event.id)}
-              onToggleExpand={() => onToggleEventExpand(event.id)}
-            />
-          ))}
+        <div className="px-4 pb-4 space-y-3">
+          {/* Phase Time Credit (if phase has time configured) */}
+          {hasPhaseTime && (
+            <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl p-4 border border-slate-200">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <ClockIcon />
+                  <span className="text-sm font-bold text-gray-900">Phase Time Credit</span>
+                </div>
+                <Tooltip text="Manually override the total phase time credited">
+                  <span className="text-gray-400 cursor-help"><InfoIcon /></span>
+                </Tooltip>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-3 bg-white rounded-lg border border-gray-200">
+                  <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Required</div>
+                  <div className="text-lg font-bold font-mono text-gray-900">
+                    {formatTime(phase.phaseTime.total)}
+                  </div>
+                  <div className="text-[10px] text-gray-400">{formatTimeFriendly(phase.phaseTime.total)}</div>
+                </div>
+
+                <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="text-[10px] text-blue-700 uppercase tracking-wide mb-1">Credited</div>
+                  <EditableTimeInput
+                    value={phaseTimeCredit}
+                    onChange={onPhaseTimeChange}
+                    label={`${phase.shortName} credited time`}
+                    size="md"
+                  />
+                  {phaseTimeCredit !== calculatedPhaseTime && (
+                    <div className="text-[9px] text-amber-600 mt-1">manual override</div>
+                  )}
+                </div>
+
+                <div className="text-center p-3 bg-white rounded-lg border border-gray-200">
+                  <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Remaining</div>
+                  <div className={`text-lg font-bold font-mono ${
+                    phaseTimeCredit >= phase.phaseTime.total ? 'text-emerald-600' : 'text-gray-900'
+                  }`}>
+                    {phaseTimeCredit >= phase.phaseTime.total
+                      ? '✓ Complete'
+                      : formatTime(phase.phaseTime.total - phaseTimeCredit)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-3 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    phaseTimeCredit >= phase.phaseTime.total ? 'bg-emerald-500' : 'bg-blue-500'
+                  }`}
+                  style={{ width: `${Math.min(100, (phaseTimeCredit / phase.phaseTime.total) * 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Events List */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-semibold text-gray-700">Training Events</span>
+              <span className="text-[10px] text-gray-500">
+                {creditedCount} of {phase.events.length} credited
+              </span>
+            </div>
+            {phase.events.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                onCredit={onCreditEvent}
+                expanded={expandedEvents.has(event.id)}
+                onToggleExpand={() => onToggleEventExpand(event.id)}
+                onEventTimeChange={onEventTimeChange}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-// Main Credit Transfer View Component
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
 const CreditTransferView = ({
   isOpen,
   onClose,
@@ -611,21 +1030,23 @@ const CreditTransferView = ({
 }) => {
   // State
   const [phases, setPhases] = useState(INITIAL_PHASES);
-  const [manualOverrides, setManualOverrides] = useState({});
+  const [objectiveOverrides, setObjectiveOverrides] = useState({});
+  const [phaseTimeOverrides, setPhaseTimeOverrides] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
-  const [expandedPhases, setExpandedPhases] = useState(['phase1', 'phase2']);
+  const [expandedPhases, setExpandedPhases] = useState(['phase1', 'phase2', 'phase3']);
   const [expandedEvents, setExpandedEvents] = useState(new Set());
+  const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'phases'
 
-  // Calculate credited totals from checked events
+  // Calculate credited totals from checked events (before overrides)
   const calculatedTotals = useMemo(() => {
     const totals = {};
-    TIME_COLUMNS.forEach(col => { totals[col.key] = 0; });
+    OBJECTIVE_TYPES.forEach(col => { totals[col.key] = 0; });
 
     phases.forEach(phase => {
       phase.events.forEach(event => {
         if (event.credited) {
-          TIME_COLUMNS.forEach(col => {
+          OBJECTIVE_TYPES.forEach(col => {
             totals[col.key] += event[col.key] || 0;
           });
         }
@@ -634,25 +1055,57 @@ const CreditTransferView = ({
     return totals;
   }, [phases]);
 
-  // Apply manual overrides
+  // Apply manual overrides to objective totals
   const creditedTotals = useMemo(() => {
     const totals = { ...calculatedTotals };
-    Object.keys(manualOverrides).forEach(key => {
-      totals[key] = manualOverrides[key];
+    Object.keys(objectiveOverrides).forEach(key => {
+      totals[key] = objectiveOverrides[key];
     });
     return totals;
-  }, [calculatedTotals, manualOverrides]);
+  }, [calculatedTotals, objectiveOverrides]);
+
+  // Calculate phase time credits (from credited events)
+  const calculatedPhaseTimes = useMemo(() => {
+    const times = {};
+    phases.forEach(phase => {
+      let total = 0;
+      phase.events.forEach(event => {
+        if (event.credited) {
+          OBJECTIVE_TYPES.forEach(col => {
+            total += event[col.key] || 0;
+          });
+        }
+      });
+      times[phase.id] = total;
+    });
+    return times;
+  }, [phases]);
+
+  // Apply manual overrides to phase times
+  const phaseTimeCredits = useMemo(() => {
+    const times = { ...calculatedPhaseTimes };
+    Object.keys(phaseTimeOverrides).forEach(key => {
+      times[key] = phaseTimeOverrides[key];
+    });
+    return times;
+  }, [calculatedPhaseTimes, phaseTimeOverrides]);
 
   // Overall statistics
   const overallStats = useMemo(() => {
     const totalEvents = phases.reduce((sum, p) => sum + p.events.length, 0);
     const creditedEvents = phases.reduce((sum, p) => sum + p.events.filter(e => e.credited).length, 0);
+    const totalPhaseTime = phases.reduce((sum, p) => sum + (p.phaseTime?.total || 0), 0);
+    const creditedPhaseTime = Object.values(phaseTimeCredits).reduce((sum, t) => sum + t, 0);
+
     return {
       totalEvents,
       creditedEvents,
-      progress: totalEvents > 0 ? (creditedEvents / totalEvents) * 100 : 0,
+      eventProgress: totalEvents > 0 ? (creditedEvents / totalEvents) * 100 : 0,
+      totalPhaseTime,
+      creditedPhaseTime,
+      phaseTimeProgress: totalPhaseTime > 0 ? (creditedPhaseTime / totalPhaseTime) * 100 : 0,
     };
-  }, [phases]);
+  }, [phases, phaseTimeCredits]);
 
   // Check phase credit status
   const getPhaseStatus = useCallback((phase) => {
@@ -686,9 +1139,26 @@ const CreditTransferView = ({
     setTimeout(() => setIsSaving(false), 600);
   }, []);
 
-  const handleManualOverride = useCallback((categoryKey, value) => {
+  const handleObjectiveOverride = useCallback((key, value) => {
     setIsSaving(true);
-    setManualOverrides(prev => ({ ...prev, [categoryKey]: value }));
+    setObjectiveOverrides(prev => ({ ...prev, [key]: value }));
+    setTimeout(() => setIsSaving(false), 600);
+  }, []);
+
+  const handlePhaseTimeOverride = useCallback((phaseId, value) => {
+    setIsSaving(true);
+    setPhaseTimeOverrides(prev => ({ ...prev, [phaseId]: value }));
+    setTimeout(() => setIsSaving(false), 600);
+  }, []);
+
+  const handleEventTimeChange = useCallback((eventId, objectiveKey, value) => {
+    setIsSaving(true);
+    setPhases(prev => prev.map(phase => ({
+      ...phase,
+      events: phase.events.map(event =>
+        event.id === eventId ? { ...event, [objectiveKey]: value } : event
+      )
+    })));
     setTimeout(() => setIsSaving(false), 600);
   }, []);
 
@@ -698,7 +1168,8 @@ const CreditTransferView = ({
       ...phase,
       events: phase.events.map(e => ({ ...e, credited: false }))
     })));
-    setManualOverrides({});
+    setObjectiveOverrides({});
+    setPhaseTimeOverrides({});
     setShowResetDialog(false);
     setTimeout(() => setIsSaving(false), 600);
   }, []);
@@ -731,13 +1202,19 @@ const CreditTransferView = ({
       <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm animate-fadeIn" onClick={onClose} />
 
       {/* Panel */}
-      <div className="absolute inset-y-0 right-0 w-full max-w-2xl flex flex-col bg-gray-50 shadow-2xl animate-slideIn">
+      <div className="absolute inset-y-0 right-0 w-full max-w-3xl flex flex-col bg-gray-50 shadow-2xl animate-slideIn">
 
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white">
           {/* Top Bar */}
           <div className="flex justify-between items-center px-5 py-2.5 border-b border-white/10">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <h1 className="text-lg font-bold">Credit Transfer</h1>
+              <span className="px-2 py-0.5 bg-white/10 rounded-md text-xs font-medium">
+                PLAR
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
               <div className={`
                 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium
                 transition-all duration-300
@@ -753,124 +1230,190 @@ const CreditTransferView = ({
                 ) : (
                   <>
                     <SaveIcon />
-                    Auto-save enabled
+                    Auto-save
                   </>
                 )}
               </div>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-lg hover:bg-white/10 transition-colors duration-200"
+              >
+                <CloseIcon />
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg hover:bg-white/10 transition-colors duration-200"
-            >
-              <CloseIcon />
-            </button>
           </div>
 
           {/* Student Info */}
           <div className="px-5 py-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30 text-white">
                 <UserIcon />
               </div>
               <div>
-                <h1 className="text-lg font-bold">{studentName}</h1>
+                <h2 className="text-lg font-bold">{studentName}</h2>
                 <div className="flex items-center gap-2 text-xs text-white/70">
                   <span className="px-2 py-0.5 bg-white/10 rounded-md font-mono">{studentId}</span>
                   <span className="px-2 py-0.5 bg-white/10 rounded-md font-mono">{studentCode}</span>
-                  <span className="flex items-center gap-1">
-                    <PlaneIcon />
-                    ME-IR Training
-                  </span>
+                  <span>ME-IR Training Program</span>
                 </div>
               </div>
             </div>
 
-            {/* Overall Progress */}
-            <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl backdrop-blur-sm">
-              <ProgressRing
-                progress={overallStats.progress}
-                size={48}
-                strokeWidth={4}
-                color="emerald"
-              />
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-medium text-white/70">Overall Progress</span>
-                  <span className="text-xs font-bold text-white">{overallStats.creditedEvents} of {overallStats.totalEvents} events</span>
+            {/* Overall Progress Cards */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 bg-white/5 rounded-xl backdrop-blur-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-white/70">Events Credited</span>
+                  <ProgressRing progress={overallStats.eventProgress} size={36} strokeWidth={3} color="emerald" />
                 </div>
-                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-500"
-                    style={{ width: `${overallStats.progress}%` }}
-                  />
+                <div className="text-xl font-bold">
+                  {overallStats.creditedEvents} <span className="text-sm font-normal text-white/50">/ {overallStats.totalEvents}</span>
+                </div>
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mt-2">
+                  <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${overallStats.eventProgress}%` }} />
+                </div>
+              </div>
+
+              <div className="p-3 bg-white/5 rounded-xl backdrop-blur-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-white/70">Phase Time</span>
+                  <ProgressRing progress={overallStats.phaseTimeProgress} size={36} strokeWidth={3} color="blue" />
+                </div>
+                <div className="text-xl font-bold">
+                  {formatTimeFriendly(overallStats.creditedPhaseTime)} <span className="text-sm font-normal text-white/50">/ {formatTimeFriendly(overallStats.totalPhaseTime)}</span>
+                </div>
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mt-2">
+                  <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${overallStats.phaseTimeProgress}%` }} />
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Credit Summary Section - Grid of Cards */}
-        <div className="px-5 py-4 bg-white border-b border-gray-200">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Credit Summary</h2>
+          {/* Tab Navigation */}
+          <div className="px-5 pb-0 flex gap-1">
             <button
-              onClick={() => setShowResetDialog(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-red-600
-                         bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200"
+              onClick={() => setActiveTab('summary')}
+              className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-all duration-200 ${
+                activeTab === 'summary'
+                  ? 'bg-gray-50 text-gray-900'
+                  : 'text-white/70 hover:text-white hover:bg-white/10'
+              }`}
             >
-              <RefreshIcon />
-              Reset
+              Credit Summary
+            </button>
+            <button
+              onClick={() => setActiveTab('phases')}
+              className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-all duration-200 ${
+                activeTab === 'phases'
+                  ? 'bg-gray-50 text-gray-900'
+                  : 'text-white/70 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              Training Events
             </button>
           </div>
-
-          {/* Responsive Grid of Objective Cards */}
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
-            {TIME_COLUMNS.map(col => (
-              <CreditSummaryCard
-                key={col.key}
-                column={col}
-                requirement={SYLLABUS_REQUIREMENTS[col.key]}
-                credited={creditedTotals[col.key]}
-                onOverride={(val) => handleManualOverride(col.key, val)}
-              />
-            ))}
-          </div>
-          <p className="text-[10px] text-gray-400 mt-2 text-center">
-            Click credited values to manually override
-          </p>
         </div>
 
-        {/* Phases List */}
-        <div className="flex-1 overflow-auto p-5 space-y-3">
-          {phases.map((phase) => (
-            <PhaseCard
-              key={phase.id}
-              phase={phase}
-              isExpanded={expandedPhases.includes(phase.id)}
-              onToggle={() => togglePhase(phase.id)}
-              onCreditEvent={handleCreditEvent}
-              onCreditPhase={handleCreditPhase}
-              status={getPhaseStatus(phase)}
-              expandedEvents={expandedEvents}
-              onToggleEventExpand={toggleEventExpand}
-            />
-          ))}
+        {/* Content */}
+        <div className="flex-1 overflow-auto p-5 space-y-4">
+          {activeTab === 'summary' ? (
+            <>
+              {/* Objective Time Summary */}
+              <ObjectiveTimeSummary
+                creditedTotals={creditedTotals}
+                calculatedTotals={calculatedTotals}
+                requirements={SYLLABUS_REQUIREMENTS}
+                onOverride={handleObjectiveOverride}
+              />
+
+              {/* Phase Time Credits */}
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30 text-white">
+                      <ClockIcon />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900">Phase Time Credits</h3>
+                      <p className="text-[10px] text-gray-500">Time credited per training phase</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {phases.map(phase => (
+                    <PhaseTimeCreditCard
+                      key={phase.id}
+                      phase={phase}
+                      phaseTimeCredit={phaseTimeCredits[phase.id]}
+                      onPhaseTimeChange={(val) => handlePhaseTimeOverride(phase.id, val)}
+                      calculatedPhaseTime={calculatedPhaseTimes[phase.id]}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Info Box */}
+              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                <div className="text-amber-600"><InfoIcon /></div>
+                <div>
+                  <h4 className="text-sm font-semibold text-amber-800">How Credit Transfer Works</h4>
+                  <ul className="mt-1 text-xs text-amber-700 space-y-1">
+                    <li>• <strong>Mark events as credited</strong> using checkboxes in the Training Events tab</li>
+                    <li>• <strong>Override objective time</strong> by clicking any time value in the table above</li>
+                    <li>• <strong>Override phase time</strong> by clicking the credited time in each phase card</li>
+                    <li>• All changes are auto-saved instantly</li>
+                  </ul>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Phases List */}
+              {phases.map((phase) => (
+                <PhaseSection
+                  key={phase.id}
+                  phase={phase}
+                  isExpanded={expandedPhases.includes(phase.id)}
+                  onToggle={() => togglePhase(phase.id)}
+                  onCreditEvent={handleCreditEvent}
+                  onCreditPhase={handleCreditPhase}
+                  status={getPhaseStatus(phase)}
+                  expandedEvents={expandedEvents}
+                  onToggleEventExpand={toggleEventExpand}
+                  onEventTimeChange={handleEventTimeChange}
+                  phaseTimeCredit={phaseTimeCredits[phase.id]}
+                  onPhaseTimeChange={(val) => handlePhaseTimeOverride(phase.id, val)}
+                  calculatedPhaseTime={calculatedPhaseTimes[phase.id]}
+                />
+              ))}
+            </>
+          )}
         </div>
 
         {/* Footer */}
         <div className="px-5 py-3 bg-white border-t border-gray-200 flex justify-between items-center">
-          <div className="text-xs text-gray-500">
-            <span className="font-semibold text-gray-900">{overallStats.creditedEvents}</span> of{' '}
-            <span className="font-semibold text-gray-900">{overallStats.totalEvents}</span> events credited
-          </div>
           <button
-            onClick={onClose}
-            className="px-5 py-2 text-sm font-semibold text-white
-                       bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900
-                       rounded-xl shadow-lg transition-all duration-200"
+            onClick={() => setShowResetDialog(true)}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600
+                       bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200"
           >
-            Done
+            <RefreshIcon />
+            Reset All
           </button>
+          <div className="flex items-center gap-3">
+            <div className="text-xs text-gray-500">
+              <span className="font-semibold text-gray-900">{overallStats.creditedEvents}</span> of{' '}
+              <span className="font-semibold text-gray-900">{overallStats.totalEvents}</span> events credited
+            </div>
+            <button
+              onClick={onClose}
+              className="px-5 py-2 text-sm font-semibold text-white
+                         bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900
+                         rounded-xl shadow-lg transition-all duration-200"
+            >
+              Done
+            </button>
+          </div>
         </div>
       </div>
 
