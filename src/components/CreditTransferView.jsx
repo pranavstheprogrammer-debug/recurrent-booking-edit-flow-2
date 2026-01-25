@@ -664,7 +664,6 @@ const CreditTransferView = ({
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [expandedSections, setExpandedSections] = useState(['section1', 'section2', 'section3']);
   const [expandedEvents, setExpandedEvents] = useState(new Set());
-  const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'sections'
 
   // Overall statistics
   const overallStats = useMemo(() => {
@@ -831,66 +830,25 @@ const CreditTransferView = ({
             </div>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="px-5 pb-0 flex gap-1">
-            <button
-              onClick={() => setActiveTab('summary')}
-              className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-all duration-200 ${
-                activeTab === 'summary'
-                  ? 'bg-gray-50 text-gray-900'
-                  : 'text-white/70 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              Credit Summary
-            </button>
-            <button
-              onClick={() => setActiveTab('sections')}
-              className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-all duration-200 ${
-                activeTab === 'sections'
-                  ? 'bg-gray-50 text-gray-900'
-                  : 'text-white/70 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              Training Events
-            </button>
-          </div>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-5 space-y-4">
-          {activeTab === 'summary' ? (
-            <>
-              {/* Info Box */}
-              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                <div className="text-amber-600"><InfoIcon /></div>
-                <div>
-                  <h4 className="text-sm font-semibold text-amber-800">How Credit Transfer Works</h4>
-                  <ul className="mt-1 text-xs text-amber-700 space-y-1">
-                    <li>• <strong>Mark events as credited</strong> using checkboxes in the Training Events tab</li>
-                    <li>• All changes are auto-saved instantly</li>
-                  </ul>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Sections List */}
-              {sections.map((section) => (
-                <TrainingSection
-                  key={section.id}
-                  section={section}
-                  isExpanded={expandedSections.includes(section.id)}
-                  onToggle={() => toggleSection(section.id)}
-                  onCreditEvent={handleCreditEvent}
-                  onCreditSection={handleCreditSection}
-                  status={getSectionStatus(section)}
-                  expandedEvents={expandedEvents}
-                  onToggleEventExpand={toggleEventExpand}
-                  onEventTimeChange={handleEventTimeChange}
-                />
-              ))}
-            </>
-          )}
+          {/* Sections List */}
+          {sections.map((section) => (
+            <TrainingSection
+              key={section.id}
+              section={section}
+              isExpanded={expandedSections.includes(section.id)}
+              onToggle={() => toggleSection(section.id)}
+              onCreditEvent={handleCreditEvent}
+              onCreditSection={handleCreditSection}
+              status={getSectionStatus(section)}
+              expandedEvents={expandedEvents}
+              onToggleEventExpand={toggleEventExpand}
+              onEventTimeChange={handleEventTimeChange}
+            />
+          ))}
         </div>
 
         {/* Footer */}
