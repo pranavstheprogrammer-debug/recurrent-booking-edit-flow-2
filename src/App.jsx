@@ -6,12 +6,14 @@ import CreateBookingModal from '@components/CreateBookingModal';
 import CreateBookingModalSplit from '@components/CreateBookingModalSplit';
 import CreditTransferDrawer from '@components/CreditTransferDrawer';
 import CreditTransferView from '@components/CreditTransferView';
+import CreditTransferViewDark from '@components/CreditTransferViewDark';
+import CreditTransferViewLight from '@components/CreditTransferViewLight';
 import Toast from '@components/Toast';
 
 const App = () => {
   const [activeDesign, setActiveDesign] = useState('split'); // 'standard', 'compact', or 'split'
   const [activeCreateDesign, setActiveCreateDesign] = useState('inline'); // 'inline' or 'split'
-  const [activeCreditDesign, setActiveCreditDesign] = useState('wireframe'); // 'drawer' or 'wireframe'
+  const [activeCreditDesign, setActiveCreditDesign] = useState('dark'); // 'drawer', 'dark', or 'light'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreditTransferOpen, setIsCreditTransferOpen] = useState(false);
@@ -438,7 +440,61 @@ const App = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Credit Transfer Variants</h2>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* Dark Theme Design */}
+            <button
+              onClick={() => setActiveCreditDesign('dark')}
+              className={`p-4 rounded-lg border-2 text-left transition-all ${
+                activeCreditDesign === 'dark'
+                  ? 'border-slate-600 bg-slate-900'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  activeCreditDesign === 'dark' ? 'border-slate-400' : 'border-gray-300'
+                }`}>
+                  {activeCreditDesign === 'dark' && <div className="w-2 h-2 rounded-full bg-slate-400" />}
+                </div>
+                <h3 className={`font-semibold ${activeCreditDesign === 'dark' ? 'text-white' : 'text-gray-900'}`}>Dark Theme</h3>
+                <span className="px-1.5 py-0.5 bg-slate-700 text-slate-300 text-xs rounded font-medium">New</span>
+              </div>
+              <p className={`text-sm ml-6 ${activeCreditDesign === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                Full dark mode with slate/gray backgrounds, optimized for low-light environments.
+              </p>
+              <div className="ml-6 mt-2 flex flex-wrap gap-1">
+                <span className={`px-2 py-0.5 text-xs rounded ${activeCreditDesign === 'dark' ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-600'}`}>Dark UI</span>
+                <span className={`px-2 py-0.5 text-xs rounded ${activeCreditDesign === 'dark' ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-600'}`}>Eye comfort</span>
+              </div>
+            </button>
+
+            {/* Light Theme Design */}
+            <button
+              onClick={() => setActiveCreditDesign('light')}
+              className={`p-4 rounded-lg border-2 text-left transition-all ${
+                activeCreditDesign === 'light'
+                  ? 'border-blue-400 bg-blue-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  activeCreditDesign === 'light' ? 'border-blue-500' : 'border-gray-300'
+                }`}>
+                  {activeCreditDesign === 'light' && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                </div>
+                <h3 className="font-semibold text-gray-900">Light Theme</h3>
+                <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs rounded font-medium">New</span>
+              </div>
+              <p className="text-sm text-gray-600 ml-6">
+                Full light mode with white/gray backgrounds, clean and professional appearance.
+              </p>
+              <div className="ml-6 mt-2 flex flex-wrap gap-1">
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Light UI</span>
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Clean look</span>
+              </div>
+            </button>
+
             {/* Drawer Design */}
             <button
               onClick={() => setActiveCreditDesign('drawer')}
@@ -457,38 +513,11 @@ const App = () => {
                 <h3 className="font-semibold text-gray-900">Modern Drawer</h3>
               </div>
               <p className="text-sm text-gray-600 ml-6">
-                Feature-rich design with search, collapsible sections, progress indicators, and modern styling.
+                Feature-rich design with search, collapsible sections, and progress indicators.
               </p>
               <div className="ml-6 mt-2 flex flex-wrap gap-1">
                 <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Search</span>
                 <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Collapsible</span>
-              </div>
-            </button>
-
-            {/* Wireframe Design */}
-            <button
-              onClick={() => setActiveCreditDesign('wireframe')}
-              className={`p-4 rounded-lg border-2 text-left transition-all ${
-                activeCreditDesign === 'wireframe'
-                  ? 'border-slate-500 bg-slate-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                  activeCreditDesign === 'wireframe' ? 'border-slate-500' : 'border-gray-300'
-                }`}>
-                  {activeCreditDesign === 'wireframe' && <div className="w-2 h-2 rounded-full bg-slate-500" />}
-                </div>
-                <h3 className="font-semibold text-gray-900">NORTÁVIA Wireframe</h3>
-                <span className="px-1.5 py-0.5 bg-slate-100 text-slate-700 text-xs rounded font-medium">New</span>
-              </div>
-              <p className="text-sm text-gray-600 ml-6">
-                Table-based layout matching the NORTÁVIA flight school wireframe with VFR/IFR column headers.
-              </p>
-              <div className="ml-6 mt-2 flex flex-wrap gap-1">
-                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">VFR/IFR columns</span>
-                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Section totals</span>
               </div>
             </button>
           </div>
@@ -498,7 +527,7 @@ const App = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">Credit Transfer Demo</h2>
           <p className="text-sm text-gray-500 mb-4">
-            Click the button below to see the <strong>{activeCreditDesign === 'drawer' ? 'Modern Drawer' : 'NORTÁVIA Wireframe'}</strong> design in action.
+            Click the button below to see the <strong>{activeCreditDesign === 'drawer' ? 'Modern Drawer' : activeCreditDesign === 'dark' ? 'Dark Theme' : 'Light Theme'}</strong> design in action.
           </p>
 
           <button
@@ -514,19 +543,7 @@ const App = () => {
           {/* Instructions */}
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
             <h3 className="font-medium text-gray-800 text-sm mb-2">Key features to explore:</h3>
-            {activeCreditDesign === 'wireframe' ? (
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• <strong>Student Header</strong> - shows Student ID, Code, and Name (17094 NRO - Nuno Rodrigues)</li>
-                <li>• <strong>VFR/IFR Column Groups</strong> - two-row headers matching wireframe spec</li>
-                <li>• <strong>Syllabus Row</strong> - total hours required for the training program</li>
-                <li>• <strong>Credited Row</strong> - editable inputs with [H:MM] format, Reset button</li>
-                <li>• <strong>Section Structure</strong> - BIFM, Adv Instruments sections with totals</li>
-                <li>• <strong>Lesson Links</strong> - clickable INST XX links (would navigate to lesson details)</li>
-                <li>• <strong>Right-side Checkboxes</strong> - section and lesson selection on right</li>
-                <li>• <strong>Blue Highlighting</strong> - credited rows highlighted with blue bar</li>
-                <li>• <strong>Auto-save</strong> - changes save immediately</li>
-              </ul>
-            ) : (
+            {activeCreditDesign === 'drawer' ? (
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• <strong>Credit Summary Table</strong> - shows Syllabus (Required), Credited, and Remaining</li>
                 <li>• <strong>Editable credited values</strong> - click any credited cell to manually override</li>
@@ -538,6 +555,19 @@ const App = () => {
                 <li>• <strong>Search</strong> - filter training events by name</li>
                 <li>• <strong>Reset All</strong> - clear all credits with confirmation dialog</li>
                 <li>• <strong>Collapsible sections</strong> - click chevron to expand/collapse</li>
+              </ul>
+            ) : (
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• <strong>{activeCreditDesign === 'dark' ? 'Dark Theme' : 'Light Theme'}</strong> - Consistent {activeCreditDesign === 'dark' ? 'dark slate' : 'light white/gray'} color scheme throughout</li>
+                <li>• <strong>Student Header</strong> - shows Student ID, Code, and Name (17094 NRO - Nuno Rodrigues)</li>
+                <li>• <strong>Objectives Overview</strong> - compact grid showing progress per training objective</li>
+                <li>• <strong>Progress Rings</strong> - visual progress indicators for sections and overall</li>
+                <li>• <strong>Click-to-edit times</strong> - click any time value to edit it directly</li>
+                <li>• <strong>Event cards</strong> - expandable cards with full time breakdowns</li>
+                <li>• <strong>Section-level selection</strong> - check section header to credit all events</li>
+                <li>• <strong>Auto-save indicator</strong> - shows when changes are being saved</li>
+                <li>• <strong>Reset All</strong> - clear all credits with confirmation dialog</li>
+                <li>• <strong>Collapsible sections</strong> - click to expand/collapse training sections</li>
               </ul>
             )}
           </div>
@@ -599,9 +629,20 @@ const App = () => {
         />
       )}
 
-      {/* Credit Transfer - Wireframe Design */}
-      {activeCreditDesign === 'wireframe' && (
-        <CreditTransferView
+      {/* Credit Transfer - Dark Theme */}
+      {activeCreditDesign === 'dark' && (
+        <CreditTransferViewDark
+          isOpen={isCreditTransferOpen}
+          onClose={() => setIsCreditTransferOpen(false)}
+          studentId="17094"
+          studentCode="NRO"
+          studentName="Nuno Rodrigues"
+        />
+      )}
+
+      {/* Credit Transfer - Light Theme */}
+      {activeCreditDesign === 'light' && (
+        <CreditTransferViewLight
           isOpen={isCreditTransferOpen}
           onClose={() => setIsCreditTransferOpen(false)}
           studentId="17094"
