@@ -6,10 +6,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
  * Features:
  *
  * 1. EVENT-LEVEL CREDITING: Mark individual training events as credited
- * 2. SECTION TIME CREDITS: Manually specify section-level time credits (when sections have time configured)
- * 3. INTUITIVE CLICK-TO-EDIT: Time inputs with easy manual override
- *
- * Prerequisite: This feature assumes times ARE configured on sections.
+ * 2. INTUITIVE CLICK-TO-EDIT: Time inputs with easy manual override for event objective times
  */
 
 // ============================================================================
@@ -30,7 +27,7 @@ const OBJECTIVE_TYPES = [
   { key: 'instrument', label: 'Instrument', shortLabel: 'Inst', color: 'violet', description: 'Actual instrument time' },
 ];
 
-// Section configurations with their own time requirements
+// Section configurations
 const INITIAL_SECTIONS = [
   {
     id: 'section1',
@@ -38,11 +35,6 @@ const INITIAL_SECTIONS = [
     shortName: 'Section 1 - BIFM',
     description: 'Introduction to instrument flight fundamentals',
     icon: '✈️',
-    // Section-level time allocations (total time for the section)
-    sectionTime: {
-      total: 720,  // 12 hours total section time
-      credited: 0, // Will be calculated or manually set
-    },
     events: [
       { id: 'inst01', name: 'INST 01 - Basic Attitudes', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 30, credited: false },
       { id: 'inst02', name: 'INST 02 - Straight & Level', vfrDual: 0, ifrDual: 10, ifrHood: 90, sim: 0, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 30, credited: true },
@@ -58,10 +50,6 @@ const INITIAL_SECTIONS = [
     shortName: 'Section 2 - Adv Inst',
     description: 'Complex approaches and navigation',
     icon: '🎯',
-    sectionTime: {
-      total: 1440,  // 24 hours total section time
-      credited: 0,
-    },
     events: [
       { id: 'inst07', name: 'INST 07 - ILS Approach', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 0, xc: 60, night: 0, solo: 0, pic: 30, sic: 0, instrument: 60, credited: true },
       { id: 'inst08', name: 'INST 08 - VOR Approach', vfrDual: 0, ifrDual: 10, ifrHood: 120, sim: 60, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 60, credited: false },
@@ -83,10 +71,6 @@ const INITIAL_SECTIONS = [
     shortName: 'Section 3 - ME',
     description: 'Multi-engine aircraft operations',
     icon: '🛩️',
-    sectionTime: {
-      total: 900,  // 15 hours total section time
-      credited: 0,
-    },
     events: [
       { id: 'me01', name: 'ME 01 - Systems Ground', vfrDual: 60, ifrDual: 0, ifrHood: 0, sim: 120, xc: 0, night: 0, solo: 0, pic: 0, sic: 0, instrument: 0, credited: false },
       { id: 'me02', name: 'ME 02 - Normal Operations', vfrDual: 90, ifrDual: 30, ifrHood: 0, sim: 0, xc: 0, night: 0, solo: 0, pic: 30, sic: 0, instrument: 0, credited: false },
@@ -106,16 +90,6 @@ const formatTime = (minutes) => {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return `${h}:${m.toString().padStart(2, '0')}`;
-};
-
-// Format minutes to friendly display (e.g., "2h 30m")
-const formatTimeFriendly = (minutes) => {
-  if (minutes === null || minutes === undefined || minutes === 0) return '0h';
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (m === 0) return `${h}h`;
-  if (h === 0) return `${m}m`;
-  return `${h}h ${m}m`;
 };
 
 // Parse time string (H:MM) to minutes
@@ -191,12 +165,6 @@ const ChevronRightIcon = ({ isOpen }) => (
 const RefreshIcon = () => (
   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-  </svg>
-);
-
-const ClockIcon = () => (
-  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 );
 
@@ -444,98 +412,6 @@ const ResetDialog = ({ isOpen, onClose, onConfirm }) => {
   );
 };
 
-// Tooltip Component
-const Tooltip = ({ children, text }) => {
-  return (
-    <div className="group relative inline-flex">
-      {children}
-      <div className="
-        absolute bottom-full left-1/2 -translate-x-1/2 mb-2
-        px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded-lg
-        opacity-0 invisible group-hover:opacity-100 group-hover:visible
-        transition-all duration-200 whitespace-nowrap z-50
-        pointer-events-none
-      ">
-        {text}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
-      </div>
-    </div>
-  );
-};
-
-// ============================================================================
-// SECTION TIME CREDIT SECTION
-// ============================================================================
-
-const SectionTimeCreditCard = ({ section, sectionTimeCredit, onSectionTimeChange, calculatedSectionTime }) => {
-  const hasTimeRequirement = section.sectionTime && section.sectionTime.total > 0;
-  const hasOverride = sectionTimeCredit !== calculatedSectionTime;
-  const progress = hasTimeRequirement ? Math.min(100, (sectionTimeCredit / section.sectionTime.total) * 100) : 0;
-
-  if (!hasTimeRequirement) return null;
-
-  return (
-    <div className={`
-      p-3 rounded-xl border transition-all duration-200
-      ${progress >= 100
-        ? 'bg-emerald-50 border-emerald-200'
-        : progress > 0
-          ? 'bg-blue-50 border-blue-200'
-          : 'bg-gray-50 border-gray-200'}
-      ${hasOverride ? 'ring-2 ring-amber-400 ring-offset-1' : ''}
-    `}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{section.icon}</span>
-          <div>
-            <h4 className="text-xs font-bold text-gray-900">{section.shortName}</h4>
-            <p className="text-[10px] text-gray-500">Section time credit</p>
-          </div>
-        </div>
-        <ProgressRing
-          progress={progress}
-          size={36}
-          strokeWidth={3}
-          color={progress >= 100 ? 'emerald' : 'blue'}
-        />
-      </div>
-
-      {/* Time Display */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="text-[10px] text-gray-500">
-          <span>Required: </span>
-          <span className="font-mono font-medium text-gray-700">{formatTimeFriendly(section.sectionTime.total)}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-gray-500">Credited:</span>
-          <EditableTimeInput
-            value={sectionTimeCredit}
-            onChange={onSectionTimeChange}
-            label={`${section.shortName} time`}
-            size="sm"
-          />
-        </div>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="mt-2 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${
-            progress >= 100 ? 'bg-emerald-500' : 'bg-blue-500'
-          }`}
-          style={{ width: `${Math.min(100, progress)}%` }}
-        />
-      </div>
-
-      {hasOverride && (
-        <p className="text-[9px] text-amber-600 mt-1 text-right">
-          Manual override (calculated: {formatTimeFriendly(calculatedSectionTime)})
-        </p>
-      )}
-    </div>
-  );
-};
-
 // ============================================================================
 // EVENT CARD COMPONENT
 // ============================================================================
@@ -676,13 +552,9 @@ const TrainingSection = ({
   expandedEvents,
   onToggleEventExpand,
   onEventTimeChange,
-  sectionTimeCredit,
-  onSectionTimeChange,
-  calculatedSectionTime,
 }) => {
   const creditedCount = section.events.filter(e => e.credited).length;
   const progress = (creditedCount / section.events.length) * 100;
-  const hasSectionTime = section.sectionTime && section.sectionTime.total > 0;
 
   return (
     <div className={`
@@ -750,65 +622,6 @@ const TrainingSection = ({
         ${isExpanded ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'}
       `}>
         <div className="px-4 pb-4 space-y-3">
-          {/* Section Time Credit (if section has time configured) */}
-          {hasSectionTime && (
-            <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl p-4 border border-slate-200">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <ClockIcon />
-                  <span className="text-sm font-bold text-gray-900">Section Time Credit</span>
-                </div>
-                <Tooltip text="Manually override the total section time credited">
-                  <span className="text-gray-400 cursor-help"><InfoIcon /></span>
-                </Tooltip>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-3 bg-white rounded-lg border border-gray-200">
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Required</div>
-                  <div className="text-lg font-bold font-mono text-gray-900">
-                    {formatTime(section.sectionTime.total)}
-                  </div>
-                  <div className="text-[10px] text-gray-400">{formatTimeFriendly(section.sectionTime.total)}</div>
-                </div>
-
-                <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200 flex flex-col items-center">
-                  <div className="text-[10px] text-blue-700 uppercase tracking-wide mb-1">Credited</div>
-                  <EditableTimeInput
-                    value={sectionTimeCredit}
-                    onChange={onSectionTimeChange}
-                    label={`${section.shortName} credited time`}
-                    size="md"
-                  />
-                  {sectionTimeCredit !== calculatedSectionTime && (
-                    <div className="text-[9px] text-amber-600 mt-1">manual override</div>
-                  )}
-                </div>
-
-                <div className="text-center p-3 bg-white rounded-lg border border-gray-200">
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Remaining</div>
-                  <div className={`text-lg font-bold font-mono ${
-                    sectionTimeCredit >= section.sectionTime.total ? 'text-emerald-600' : 'text-gray-900'
-                  }`}>
-                    {sectionTimeCredit >= section.sectionTime.total
-                      ? '✓ Complete'
-                      : formatTime(section.sectionTime.total - sectionTimeCredit)}
-                  </div>
-                </div>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="mt-3 h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    sectionTimeCredit >= section.sectionTime.total ? 'bg-emerald-500' : 'bg-blue-500'
-                  }`}
-                  style={{ width: `${Math.min(100, (sectionTimeCredit / section.sectionTime.total) * 100)}%` }}
-                />
-              </div>
-            </div>
-          )}
-
           {/* Events List */}
           <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
@@ -847,55 +660,23 @@ const CreditTransferView = ({
 }) => {
   // State
   const [sections, setSections] = useState(INITIAL_SECTIONS);
-  const [sectionTimeOverrides, setSectionTimeOverrides] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [expandedSections, setExpandedSections] = useState(['section1', 'section2', 'section3']);
   const [expandedEvents, setExpandedEvents] = useState(new Set());
   const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'sections'
 
-  // Calculate section time credits (from credited events)
-  const calculatedSectionTimes = useMemo(() => {
-    const times = {};
-    sections.forEach(section => {
-      let total = 0;
-      section.events.forEach(event => {
-        if (event.credited) {
-          OBJECTIVE_TYPES.forEach(col => {
-            total += event[col.key] || 0;
-          });
-        }
-      });
-      times[section.id] = total;
-    });
-    return times;
-  }, [sections]);
-
-  // Apply manual overrides to section times
-  const sectionTimeCredits = useMemo(() => {
-    const times = { ...calculatedSectionTimes };
-    Object.keys(sectionTimeOverrides).forEach(key => {
-      times[key] = sectionTimeOverrides[key];
-    });
-    return times;
-  }, [calculatedSectionTimes, sectionTimeOverrides]);
-
   // Overall statistics
   const overallStats = useMemo(() => {
     const totalEvents = sections.reduce((sum, s) => sum + s.events.length, 0);
     const creditedEvents = sections.reduce((sum, s) => sum + s.events.filter(e => e.credited).length, 0);
-    const totalSectionTime = sections.reduce((sum, s) => sum + (s.sectionTime?.total || 0), 0);
-    const creditedSectionTime = Object.values(sectionTimeCredits).reduce((sum, t) => sum + t, 0);
 
     return {
       totalEvents,
       creditedEvents,
       eventProgress: totalEvents > 0 ? (creditedEvents / totalEvents) * 100 : 0,
-      totalSectionTime,
-      creditedSectionTime,
-      sectionTimeProgress: totalSectionTime > 0 ? (creditedSectionTime / totalSectionTime) * 100 : 0,
     };
-  }, [sections, sectionTimeCredits]);
+  }, [sections]);
 
   // Check section credit status
   const getSectionStatus = useCallback((section) => {
@@ -929,12 +710,6 @@ const CreditTransferView = ({
     setTimeout(() => setIsSaving(false), 600);
   }, []);
 
-  const handleSectionTimeOverride = useCallback((sectionId, value) => {
-    setIsSaving(true);
-    setSectionTimeOverrides(prev => ({ ...prev, [sectionId]: value }));
-    setTimeout(() => setIsSaving(false), 600);
-  }, []);
-
   const handleEventTimeChange = useCallback((eventId, objectiveKey, value) => {
     setIsSaving(true);
     setSections(prev => prev.map(section => ({
@@ -952,7 +727,6 @@ const CreditTransferView = ({
       ...section,
       events: section.events.map(e => ({ ...e, credited: false }))
     })));
-    setSectionTimeOverrides({});
     setShowResetDialog(false);
     setTimeout(() => setIsSaving(false), 600);
   }, []);
@@ -1042,32 +816,17 @@ const CreditTransferView = ({
               </div>
             </div>
 
-            {/* Overall Progress Cards */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-white/5 rounded-xl backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-white/70">Events Credited</span>
-                  <ProgressRing progress={overallStats.eventProgress} size={36} strokeWidth={3} color="emerald" />
-                </div>
-                <div className="text-xl font-bold">
-                  {overallStats.creditedEvents} <span className="text-sm font-normal text-white/50">/ {overallStats.totalEvents}</span>
-                </div>
-                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mt-2">
-                  <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${overallStats.eventProgress}%` }} />
-                </div>
+            {/* Overall Progress Card */}
+            <div className="p-3 bg-white/5 rounded-xl backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-white/70">Events Credited</span>
+                <ProgressRing progress={overallStats.eventProgress} size={36} strokeWidth={3} color="emerald" />
               </div>
-
-              <div className="p-3 bg-white/5 rounded-xl backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-white/70">Section Time</span>
-                  <ProgressRing progress={overallStats.sectionTimeProgress} size={36} strokeWidth={3} color="blue" />
-                </div>
-                <div className="text-xl font-bold">
-                  {formatTimeFriendly(overallStats.creditedSectionTime)} <span className="text-sm font-normal text-white/50">/ {formatTimeFriendly(overallStats.totalSectionTime)}</span>
-                </div>
-                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mt-2">
-                  <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${overallStats.sectionTimeProgress}%` }} />
-                </div>
+              <div className="text-xl font-bold">
+                {overallStats.creditedEvents} <span className="text-sm font-normal text-white/50">/ {overallStats.totalEvents}</span>
+              </div>
+              <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mt-2">
+                <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${overallStats.eventProgress}%` }} />
               </div>
             </div>
           </div>
@@ -1101,32 +860,6 @@ const CreditTransferView = ({
         <div className="flex-1 overflow-auto p-5 space-y-4">
           {activeTab === 'summary' ? (
             <>
-              {/* Section Time Credits */}
-              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30 text-white">
-                      <ClockIcon />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-gray-900">Section Time Credits</h3>
-                      <p className="text-[10px] text-gray-500">Time credited per training section</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {sections.map(section => (
-                    <SectionTimeCreditCard
-                      key={section.id}
-                      section={section}
-                      sectionTimeCredit={sectionTimeCredits[section.id]}
-                      onSectionTimeChange={(val) => handleSectionTimeOverride(section.id, val)}
-                      calculatedSectionTime={calculatedSectionTimes[section.id]}
-                    />
-                  ))}
-                </div>
-              </div>
-
               {/* Info Box */}
               <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
                 <div className="text-amber-600"><InfoIcon /></div>
@@ -1134,7 +867,6 @@ const CreditTransferView = ({
                   <h4 className="text-sm font-semibold text-amber-800">How Credit Transfer Works</h4>
                   <ul className="mt-1 text-xs text-amber-700 space-y-1">
                     <li>• <strong>Mark events as credited</strong> using checkboxes in the Training Events tab</li>
-                    <li>• <strong>Override section time</strong> by clicking the credited time in each section card</li>
                     <li>• All changes are auto-saved instantly</li>
                   </ul>
                 </div>
@@ -1155,9 +887,6 @@ const CreditTransferView = ({
                   expandedEvents={expandedEvents}
                   onToggleEventExpand={toggleEventExpand}
                   onEventTimeChange={handleEventTimeChange}
-                  sectionTimeCredit={sectionTimeCredits[section.id]}
-                  onSectionTimeChange={(val) => handleSectionTimeOverride(section.id, val)}
-                  calculatedSectionTime={calculatedSectionTimes[section.id]}
                 />
               ))}
             </>
