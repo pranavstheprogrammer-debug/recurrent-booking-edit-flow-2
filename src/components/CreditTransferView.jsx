@@ -196,6 +196,111 @@ const SaveIcon = () => (
 // UI COMPONENTS
 // ============================================================================
 
+// Objectives Overview - Compact grid showing done/expected for each training objective
+const ObjectivesOverview = ({ sections }) => {
+  // Calculate totals for each objective type
+  const objectiveStats = useMemo(() => {
+    return OBJECTIVE_TYPES.map(objective => {
+      let credited = 0;
+      let required = 0;
+
+      sections.forEach(section => {
+        section.events.forEach(event => {
+          const eventTime = event[objective.key] || 0;
+          required += eventTime;
+          if (event.credited) {
+            credited += eventTime;
+          }
+        });
+      });
+
+      const progress = required > 0 ? (credited / required) * 100 : 0;
+
+      return {
+        ...objective,
+        credited,
+        required,
+        progress,
+        isComplete: credited >= required && required > 0,
+        hasValue: required > 0,
+      };
+    }).filter(obj => obj.hasValue); // Only show objectives that have values
+  }, [sections]);
+
+  if (objectiveStats.length === 0) return null;
+
+  return (
+    <div className="mt-4">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-medium text-white/70 uppercase tracking-wide">
+          Objectives Overview
+        </span>
+        <span className="text-[10px] text-white/50">
+          {objectiveStats.filter(o => o.isComplete).length}/{objectiveStats.length} complete
+        </span>
+      </div>
+
+      {/* Compact Grid - Responsive for up to 24+ objectives */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5">
+        {objectiveStats.map(obj => {
+          const colors = getColorClasses(obj.color);
+
+          return (
+            <div
+              key={obj.key}
+              className={`
+                relative group p-2 rounded-lg transition-all duration-200
+                ${obj.isComplete
+                  ? 'bg-white/15 ring-1 ring-white/20'
+                  : 'bg-white/5 hover:bg-white/10'}
+              `}
+              title={`${obj.label}: ${formatTime(obj.credited)} credited of ${formatTime(obj.required)} required`}
+            >
+              {/* Top row: Label + Status */}
+              <div className="flex items-center justify-between gap-1 mb-1">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 bg-gradient-to-br ${colors.gradient}`} />
+                  <span className="text-[10px] font-semibold text-white/90 truncate">
+                    {obj.shortLabel}
+                  </span>
+                </div>
+                {obj.isComplete && (
+                  <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                    <CheckIcon className="w-2 h-2 text-white" />
+                  </div>
+                )}
+              </div>
+
+              {/* Time display */}
+              <div className="flex items-baseline gap-0.5 font-mono">
+                <span className={`text-sm font-bold ${obj.isComplete ? 'text-emerald-400' : 'text-white'}`}>
+                  {formatTime(obj.credited)}
+                </span>
+                <span className="text-[10px] text-white/40">/</span>
+                <span className="text-[10px] text-white/50">{formatTime(obj.required)}</span>
+              </div>
+
+              {/* Mini progress bar */}
+              <div className="h-0.5 bg-white/10 rounded-full overflow-hidden mt-1.5">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    obj.isComplete
+                      ? 'bg-emerald-500'
+                      : obj.progress > 50
+                        ? 'bg-blue-400'
+                        : 'bg-white/30'
+                  }`}
+                  style={{ width: `${Math.min(obj.progress, 100)}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 // Progress Ring - Circular progress indicator
 const ProgressRing = ({ progress, size = 48, strokeWidth = 4, color = 'blue' }) => {
   const radius = (size - strokeWidth) / 2;
@@ -828,6 +933,9 @@ const CreditTransferView = ({
                 <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${overallStats.eventProgress}%` }} />
               </div>
             </div>
+
+            {/* Objectives Overview Section */}
+            <ObjectivesOverview sections={sections} />
           </div>
 
         </div>
