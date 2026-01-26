@@ -22,6 +22,17 @@ const OBJECTIVE_TYPES = [
   { key: 'instrument', label: 'Instrument', shortLabel: 'Inst', color: 'violet', description: 'Actual instrument time' },
 ];
 
+// Initial manual credits structure (per section + global)
+const createEmptyCredits = () =>
+  OBJECTIVE_TYPES.reduce((acc, obj) => ({ ...acc, [obj.key]: 0 }), {});
+
+const INITIAL_MANUAL_CREDITS = {
+  global: createEmptyCredits(),
+  section1: createEmptyCredits(),
+  section2: createEmptyCredits(),
+  section3: createEmptyCredits(),
+};
+
 const INITIAL_SECTIONS = [
   {
     id: 'section1',
@@ -177,47 +188,87 @@ const SaveIcon = () => (
   </svg>
 );
 
+const MoonIcon = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+  </svg>
+);
+
+const PlusIcon = ({ className = "w-3.5 h-3.5" }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+  </svg>
+);
+
+const ClockIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const CreditIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
 // ============================================================================
 // UI COMPONENTS - DARK THEME
 // ============================================================================
 
-const ObjectivesOverview = ({ sections }) => {
+const ObjectivesOverview = ({ sections, manualCredits = {}, onManualCreditChange }) => {
+  const [activePopover, setActivePopover] = useState(null);
+
   const objectiveStats = useMemo(() => {
     return OBJECTIVE_TYPES.map(objective => {
-      let credited = 0;
+      let fromEvents = 0;
       let required = 0;
+      let sectionManualCredits = 0;
 
       sections.forEach(section => {
         section.events.forEach(event => {
           const eventTime = event[objective.key] || 0;
           required += eventTime;
           if (event.credited) {
-            credited += eventTime;
+            fromEvents += eventTime;
           }
         });
+        sectionManualCredits += manualCredits[section.id]?.[objective.key] || 0;
       });
 
+      const globalManualCredit = manualCredits.global?.[objective.key] || 0;
+      const totalManualCredit = globalManualCredit + sectionManualCredits;
+      const credited = fromEvents + totalManualCredit;
       const progress = required > 0 ? (credited / required) * 100 : 0;
 
       return {
         ...objective,
         credited,
+        fromEvents,
+        manualCredit: totalManualCredit,
+        globalManualCredit,
+        sectionManualCredits,
         required,
         progress,
         isComplete: credited >= required && required > 0,
         hasValue: required > 0,
       };
     }).filter(obj => obj.hasValue);
-  }, [sections]);
+  }, [sections, manualCredits]);
 
   if (objectiveStats.length === 0) return null;
 
   return (
     <div className="mt-4">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">
-          Objectives Overview
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+            Objectives Overview
+          </span>
+          <span className="text-[9px] text-slate-500 px-1.5 py-0.5 bg-slate-800 rounded-md">
+            Click + to add credit
+          </span>
+        </div>
         <span className="text-[10px] text-slate-500">
           {objectiveStats.filter(o => o.isComplete).length}/{objectiveStats.length} complete
         </span>
@@ -226,6 +277,7 @@ const ObjectivesOverview = ({ sections }) => {
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5">
         {objectiveStats.map(obj => {
           const colors = getColorClasses(obj.color);
+          const isPopoverOpen = activePopover === obj.key;
 
           return (
             <div
@@ -245,11 +297,30 @@ const ObjectivesOverview = ({ sections }) => {
                     {obj.shortLabel}
                   </span>
                 </div>
-                {obj.isComplete && (
-                  <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
-                    <CheckIcon className="w-2 h-2 text-white" />
-                  </div>
-                )}
+                <div className="flex items-center gap-1">
+                  {obj.isComplete ? (
+                    <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                      <CheckIcon className="w-2 h-2 text-white" />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActivePopover(isPopoverOpen ? null : obj.key);
+                      }}
+                      className={`
+                        w-4 h-4 rounded-md flex items-center justify-center flex-shrink-0
+                        transition-all duration-200
+                        ${isPopoverOpen
+                          ? `bg-gradient-to-br ${colors.gradient} text-white shadow-md`
+                          : 'opacity-0 group-hover:opacity-100 bg-slate-700 hover:bg-slate-600 text-slate-300'}
+                      `}
+                      title={`Add manual credit for ${obj.label}`}
+                    >
+                      <PlusIcon className="w-2.5 h-2.5" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-baseline gap-0.5 font-mono">
@@ -259,6 +330,14 @@ const ObjectivesOverview = ({ sections }) => {
                 <span className="text-[10px] text-slate-600">/</span>
                 <span className="text-[10px] text-slate-500">{formatTime(obj.required)}</span>
               </div>
+
+              {obj.manualCredit > 0 && (
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span className="text-[8px] text-slate-500">
+                    +{formatTime(obj.manualCredit)} manual
+                  </span>
+                </div>
+              )}
 
               <div className="h-0.5 bg-slate-700 rounded-full overflow-hidden mt-1.5">
                 <div
@@ -272,6 +351,18 @@ const ObjectivesOverview = ({ sections }) => {
                   style={{ width: `${Math.min(obj.progress, 100)}%` }}
                 />
               </div>
+
+              {isPopoverOpen && onManualCreditChange && (
+                <CreditTimePopover
+                  isOpen={true}
+                  onClose={() => setActivePopover(null)}
+                  objective={obj}
+                  currentValue={obj.globalManualCredit}
+                  onSave={(value) => onManualCreditChange('global', obj.key, value)}
+                  position="bottom"
+                  isDark={true}
+                />
+              )}
             </div>
           );
         })}
@@ -456,6 +547,150 @@ const EditableTimeInput = ({ value, onChange, label, placeholder = "0:00", size 
   );
 };
 
+// ============================================================================
+// CREDIT TIME POPOVER - Dark theme version
+// ============================================================================
+
+const CreditTimePopover = ({
+  isOpen,
+  onClose,
+  objective,
+  currentValue = 0,
+  onSave,
+  position = 'bottom',
+  isDark = true
+}) => {
+  const [hours, setHours] = useState(Math.floor(currentValue / 60));
+  const [minutes, setMinutes] = useState(currentValue % 60);
+  const popoverRef = useRef(null);
+
+  useEffect(() => {
+    setHours(Math.floor(currentValue / 60));
+    setMinutes(currentValue % 60);
+  }, [currentValue, isOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen, onClose]);
+
+  const handleSave = () => {
+    const totalMinutes = (parseInt(hours) || 0) * 60 + (parseInt(minutes) || 0);
+    onSave(totalMinutes);
+    onClose();
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') handleSave();
+    if (e.key === 'Escape') onClose();
+  };
+
+  if (!isOpen) return null;
+
+  const colors = objective ? getColorClasses(objective.color) : {};
+
+  return (
+    <div
+      ref={popoverRef}
+      className={`
+        absolute z-50 ${position === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'} left-1/2 -translate-x-1/2
+        bg-slate-800 rounded-xl shadow-2xl border border-slate-700 p-3 w-52
+        animate-scaleIn origin-top
+      `}
+    >
+      <div className={`
+        absolute left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-800 border-slate-700 rotate-45
+        ${position === 'top' ? '-bottom-1.5 border-r border-b' : '-top-1.5 border-l border-t'}
+      `} />
+
+      <div className="relative">
+        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-700">
+          <div className={`w-2.5 h-2.5 rounded-full bg-gradient-to-br ${colors.gradient || 'from-blue-500 to-blue-600'}`} />
+          <span className="text-xs font-semibold text-slate-200">
+            Credit {objective?.label || 'Time'}
+          </span>
+          <CreditIcon className="w-3.5 h-3.5 text-slate-500 ml-auto" />
+        </div>
+
+        <div className="flex items-center justify-center gap-2 mb-3">
+          <div className="flex flex-col items-center">
+            <input
+              type="number"
+              min="0"
+              max="999"
+              value={hours}
+              onChange={(e) => setHours(Math.max(0, parseInt(e.target.value) || 0))}
+              onKeyDown={handleKeyDown}
+              className="w-14 h-10 text-center text-lg font-bold font-mono border-2 border-slate-600
+                         rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20
+                         bg-slate-900 text-slate-100 transition-all outline-none"
+              autoFocus
+            />
+            <span className="text-[10px] text-slate-500 mt-1">hours</span>
+          </div>
+          <span className="text-xl font-bold text-slate-500 mb-4">:</span>
+          <div className="flex flex-col items-center">
+            <input
+              type="number"
+              min="0"
+              max="59"
+              value={minutes.toString().padStart(2, '0')}
+              onChange={(e) => setMinutes(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
+              onKeyDown={handleKeyDown}
+              className="w-14 h-10 text-center text-lg font-bold font-mono border-2 border-slate-600
+                         rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20
+                         bg-slate-900 text-slate-100 transition-all outline-none"
+            />
+            <span className="text-[10px] text-slate-500 mt-1">mins</span>
+          </div>
+        </div>
+
+        <div className="flex gap-1 mb-3">
+          {[15, 30, 60].map(mins => (
+            <button
+              key={mins}
+              onClick={() => {
+                const total = hours * 60 + minutes + mins;
+                setHours(Math.floor(total / 60));
+                setMinutes(total % 60);
+              }}
+              className="flex-1 py-1 text-[10px] font-semibold text-slate-300 bg-slate-700
+                         hover:bg-slate-600 rounded-md transition-colors"
+            >
+              +{mins >= 60 ? `${mins/60}h` : `${mins}m`}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={onClose}
+            className="flex-1 py-1.5 text-xs font-semibold text-slate-300 bg-slate-700
+                       hover:bg-slate-600 rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className={`flex-1 py-1.5 text-xs font-semibold text-white
+                       bg-gradient-to-r ${colors.gradient || 'from-blue-500 to-blue-600'}
+                       hover:shadow-lg rounded-lg transition-all`}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ResetDialog = ({ isOpen, onClose, onConfirm }) => {
   if (!isOpen) return null;
 
@@ -486,6 +721,102 @@ const ResetDialog = ({ isOpen, onClose, onConfirm }) => {
           >
             Reset All
           </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// SECTION MANUAL CREDIT COMPONENT - Dark theme version
+// ============================================================================
+
+const SectionManualCredit = ({ sectionId, manualCredits = {}, onManualCreditChange, isExpanded, onToggle }) => {
+  const sectionCredits = manualCredits[sectionId] || {};
+  const totalManualMinutes = useMemo(() => {
+    return OBJECTIVE_TYPES.reduce((sum, obj) => sum + (sectionCredits[obj.key] || 0), 0);
+  }, [sectionCredits]);
+
+  const hasAnyCredits = totalManualMinutes > 0;
+
+  return (
+    <div className={`
+      rounded-xl border-2 border-dashed transition-all duration-200 overflow-hidden
+      ${hasAnyCredits
+        ? 'border-violet-500/50 bg-gradient-to-r from-violet-900/20 to-purple-900/20'
+        : 'border-slate-700 bg-slate-800/30 hover:border-slate-600'}
+    `}>
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-left"
+      >
+        <div className={`
+          w-7 h-7 rounded-lg flex items-center justify-center
+          ${hasAnyCredits
+            ? 'bg-gradient-to-br from-violet-500 to-purple-600 shadow-md shadow-violet-500/30'
+            : 'bg-slate-700'}
+        `}>
+          <CreditIcon className={`w-3.5 h-3.5 ${hasAnyCredits ? 'text-white' : 'text-slate-400'}`} />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-semibold ${hasAnyCredits ? 'text-violet-300' : 'text-slate-400'}`}>
+              Manual Credit
+            </span>
+            {hasAnyCredits && (
+              <span className="px-1.5 py-0.5 text-[10px] font-medium bg-violet-900/50 text-violet-300 rounded-md">
+                {formatTime(totalManualMinutes)} total
+              </span>
+            )}
+          </div>
+          <p className="text-[10px] text-slate-500 mt-0.5">
+            Add time credit directly to section objectives
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <PlusIcon className={`w-4 h-4 ${hasAnyCredits ? 'text-violet-400' : 'text-slate-500'}`} />
+          <ChevronRightIcon isOpen={isExpanded} />
+        </div>
+      </button>
+
+      <div className={`
+        transition-all duration-300 ease-in-out overflow-hidden
+        ${isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}
+      `}>
+        <div className="px-4 pb-4 pt-2 border-t border-dashed border-slate-700">
+          <div className="mb-2">
+            <span className="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">
+              Credit Time by Objective
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+            {OBJECTIVE_TYPES.map(obj => {
+              const value = sectionCredits[obj.key] || 0;
+              const colors = getColorClasses(obj.color);
+
+              return (
+                <div
+                  key={obj.key}
+                  className={`
+                    flex flex-col items-center p-2 rounded-lg transition-all
+                    ${value > 0 ? `${colors.bg} ${colors.border} border` : 'bg-slate-800 border border-slate-700'}
+                  `}
+                >
+                  <span className={`text-[10px] font-semibold mb-1 ${value > 0 ? colors.text : 'text-slate-500'}`}>
+                    {obj.shortLabel}
+                  </span>
+                  <EditableTimeInput
+                    value={value}
+                    onChange={(val) => onManualCreditChange(sectionId, obj.key, val)}
+                    label={`${obj.label} manual credit`}
+                    size="sm"
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
@@ -626,6 +957,10 @@ const TrainingSection = ({
   expandedEvents,
   onToggleEventExpand,
   onEventTimeChange,
+  manualCredits,
+  onManualCreditChange,
+  manualCreditExpanded,
+  onToggleManualCredit,
 }) => {
   const creditedCount = section.events.filter(e => e.credited).length;
   const progress = (creditedCount / section.events.length) * 100;
@@ -694,6 +1029,15 @@ const TrainingSection = ({
         ${isExpanded ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'}
       `}>
         <div className="px-4 pb-4 space-y-3">
+          {/* Section Manual Credit Row */}
+          <SectionManualCredit
+            sectionId={section.id}
+            manualCredits={manualCredits}
+            onManualCreditChange={onManualCreditChange}
+            isExpanded={manualCreditExpanded}
+            onToggle={onToggleManualCredit}
+          />
+
           <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
               <span className="text-xs font-semibold text-slate-300">Training Events</span>
@@ -730,10 +1074,12 @@ const CreditTransferViewDark = ({
   studentName = "Nuno Rodrigues",
 }) => {
   const [sections, setSections] = useState(INITIAL_SECTIONS);
+  const [manualCredits, setManualCredits] = useState(INITIAL_MANUAL_CREDITS);
   const [isSaving, setIsSaving] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [expandedSections, setExpandedSections] = useState(['section1', 'section2', 'section3']);
   const [expandedEvents, setExpandedEvents] = useState(new Set());
+  const [expandedManualCredits, setExpandedManualCredits] = useState(new Set());
 
   const overallStats = useMemo(() => {
     const totalEvents = sections.reduce((sum, s) => sum + s.events.length, 0);
@@ -787,12 +1133,25 @@ const CreditTransferViewDark = ({
     setTimeout(() => setIsSaving(false), 600);
   }, []);
 
+  const handleManualCreditChange = useCallback((scope, objectiveKey, value) => {
+    setIsSaving(true);
+    setManualCredits(prev => ({
+      ...prev,
+      [scope]: {
+        ...prev[scope],
+        [objectiveKey]: value
+      }
+    }));
+    setTimeout(() => setIsSaving(false), 600);
+  }, []);
+
   const handleReset = useCallback(() => {
     setIsSaving(true);
     setSections(prev => prev.map(section => ({
       ...section,
       events: section.events.map(e => ({ ...e, credited: false }))
     })));
+    setManualCredits(INITIAL_MANUAL_CREDITS);
     setShowResetDialog(false);
     setTimeout(() => setIsSaving(false), 600);
   }, []);
@@ -812,6 +1171,18 @@ const CreditTransferViewDark = ({
         next.delete(eventId);
       } else {
         next.add(eventId);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleManualCreditExpand = useCallback((sectionId) => {
+    setExpandedManualCredits(prev => {
+      const next = new Set(prev);
+      if (next.has(sectionId)) {
+        next.delete(sectionId);
+      } else {
+        next.add(sectionId);
       }
       return next;
     });
@@ -900,7 +1271,11 @@ const CreditTransferViewDark = ({
             </div>
 
             {/* Objectives Overview Section */}
-            <ObjectivesOverview sections={sections} />
+            <ObjectivesOverview
+              sections={sections}
+              manualCredits={manualCredits}
+              onManualCreditChange={handleManualCreditChange}
+            />
           </div>
 
         </div>
@@ -919,6 +1294,10 @@ const CreditTransferViewDark = ({
               expandedEvents={expandedEvents}
               onToggleEventExpand={toggleEventExpand}
               onEventTimeChange={handleEventTimeChange}
+              manualCredits={manualCredits}
+              onManualCreditChange={handleManualCreditChange}
+              manualCreditExpanded={expandedManualCredits.has(section.id)}
+              onToggleManualCredit={() => toggleManualCreditExpand(section.id)}
             />
           ))}
         </div>
