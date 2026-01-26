@@ -291,8 +291,7 @@ const InlineCreditTimeInput = ({
       </div>
 
       {/* Compact time input row */}
-      <div className="flex items-center justify-between gap-1">
-        <span className="text-[8px] text-white/40 uppercase font-medium">Manual</span>
+      <div className="flex items-center justify-center">
         <div className="flex items-center gap-1 bg-white/5 rounded-lg px-1 py-0.5">
           <button
             onClick={(e) => {

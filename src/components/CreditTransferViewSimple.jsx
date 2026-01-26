@@ -535,8 +535,7 @@ const UnifiedTimeCard = ({
       {/* Editable manual credit section */}
       {editable && onManualCreditChange && !isComplete && (
         <div className="mt-2 pt-2 border-t border-gray-100">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[9px] text-gray-400 uppercase tracking-wide">Manual</span>
+          <div className="flex items-center justify-center">
             <InlineTimeEditor
               value={manualCredit}
               onChange={onManualCreditChange}
