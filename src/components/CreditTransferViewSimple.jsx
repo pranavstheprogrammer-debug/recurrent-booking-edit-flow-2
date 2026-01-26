@@ -415,9 +415,9 @@ const InlineTimeEditor = ({
         )}
       </div>
 
-      {/* Quick add chips - shown on hover */}
+      {/* Quick add chips - shown on hover, positioned above to stay within card */}
       {showQuickAdd && isHovered && !isEditing && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 flex items-center gap-0.5 z-10 animate-fadeIn">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 flex items-center gap-0.5 z-10 animate-fadeIn">
           {[15, 30, 60].map(mins => (
             <button
               key={mins}
