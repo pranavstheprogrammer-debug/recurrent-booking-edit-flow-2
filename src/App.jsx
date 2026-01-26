@@ -8,12 +8,13 @@ import CreditTransferDrawer from '@components/CreditTransferDrawer';
 import CreditTransferView from '@components/CreditTransferView';
 import CreditTransferViewDark from '@components/CreditTransferViewDark';
 import CreditTransferViewLight from '@components/CreditTransferViewLight';
+import CreditTransferViewSimple from '@components/CreditTransferViewSimple';
 import Toast from '@components/Toast';
 
 const App = () => {
   const [activeDesign, setActiveDesign] = useState('split'); // 'standard', 'compact', or 'split'
   const [activeCreateDesign, setActiveCreateDesign] = useState('inline'); // 'inline' or 'split'
-  const [activeCreditDesign, setActiveCreditDesign] = useState('dark'); // 'drawer', 'dark', or 'light'
+  const [activeCreditDesign, setActiveCreditDesign] = useState('simple'); // 'simple', 'drawer', 'dark', or 'light'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreditTransferOpen, setIsCreditTransferOpen] = useState(false);
@@ -440,7 +441,34 @@ const App = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Credit Transfer Variants</h2>
 
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-4 gap-4">
+            {/* Simple Mode Design - NEW */}
+            <button
+              onClick={() => setActiveCreditDesign('simple')}
+              className={`p-4 rounded-lg border-2 text-left transition-all ${
+                activeCreditDesign === 'simple'
+                  ? 'border-violet-500 bg-violet-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  activeCreditDesign === 'simple' ? 'border-violet-500' : 'border-gray-300'
+                }`}>
+                  {activeCreditDesign === 'simple' && <div className="w-2 h-2 rounded-full bg-violet-500" />}
+                </div>
+                <h3 className="font-semibold text-gray-900">Simple Mode</h3>
+                <span className="px-1.5 py-0.5 bg-violet-100 text-violet-700 text-xs rounded font-medium">New</span>
+              </div>
+              <p className="text-sm text-gray-600 ml-6">
+                Single-step inline editing. No popovers - just click and edit directly on cards.
+              </p>
+              <div className="ml-6 mt-2 flex flex-wrap gap-1">
+                <span className="px-2 py-0.5 bg-violet-100 text-violet-600 text-xs rounded">Inline Edit</span>
+                <span className="px-2 py-0.5 bg-violet-100 text-violet-600 text-xs rounded">One Step</span>
+              </div>
+            </button>
+
             {/* Dark Theme Design */}
             <button
               onClick={() => setActiveCreditDesign('dark')}
@@ -457,7 +485,6 @@ const App = () => {
                   {activeCreditDesign === 'dark' && <div className="w-2 h-2 rounded-full bg-slate-400" />}
                 </div>
                 <h3 className={`font-semibold ${activeCreditDesign === 'dark' ? 'text-white' : 'text-gray-900'}`}>Dark Theme</h3>
-                <span className="px-1.5 py-0.5 bg-slate-700 text-slate-300 text-xs rounded font-medium">New</span>
               </div>
               <p className={`text-sm ml-6 ${activeCreditDesign === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
                 Full dark mode with slate/gray backgrounds, optimized for low-light environments.
@@ -484,7 +511,6 @@ const App = () => {
                   {activeCreditDesign === 'light' && <div className="w-2 h-2 rounded-full bg-blue-500" />}
                 </div>
                 <h3 className="font-semibold text-gray-900">Light Theme</h3>
-                <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs rounded font-medium">New</span>
               </div>
               <p className="text-sm text-gray-600 ml-6">
                 Full light mode with white/gray backgrounds, clean and professional appearance.
@@ -527,7 +553,7 @@ const App = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">Credit Transfer Demo</h2>
           <p className="text-sm text-gray-500 mb-4">
-            Click the button below to see the <strong>{activeCreditDesign === 'drawer' ? 'Modern Drawer' : activeCreditDesign === 'dark' ? 'Dark Theme' : 'Light Theme'}</strong> design in action.
+            Click the button below to see the <strong>{activeCreditDesign === 'simple' ? 'Simple Mode' : activeCreditDesign === 'drawer' ? 'Modern Drawer' : activeCreditDesign === 'dark' ? 'Dark Theme' : 'Light Theme'}</strong> design in action.
           </p>
 
           <button
@@ -543,7 +569,20 @@ const App = () => {
           {/* Instructions */}
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
             <h3 className="font-medium text-gray-800 text-sm mb-2">Key features to explore:</h3>
-            {activeCreditDesign === 'drawer' ? (
+            {activeCreditDesign === 'simple' ? (
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• <strong>Single-step inline editing</strong> - Click directly on any time value to edit, no popover needed!</li>
+                <li>• <strong>Stepper controls</strong> - Hover to reveal +/- buttons for quick 15-minute adjustments</li>
+                <li>• <strong>Quick add chips</strong> - Hover over time cards to see +15m, +30m, +1h quick-add buttons</li>
+                <li>• <strong>Unified card design</strong> - Same card style for objectives overview and event breakdowns</li>
+                <li>• <strong>Objectives Overview</strong> - Inline editable cards showing credited vs required time</li>
+                <li>• <strong>Auto-save</strong> - Changes save immediately on blur/enter</li>
+                <li>• <strong>Expandable events</strong> - Click events to reveal full time breakdown grid</li>
+                <li>• <strong>Section-level selection</strong> - Check section header to credit all events</li>
+                <li>• <strong>Manual credit sections</strong> - Expand to add time directly to section objectives</li>
+                <li>• <strong>Reset All</strong> - Clear all credits with confirmation dialog</li>
+              </ul>
+            ) : activeCreditDesign === 'drawer' ? (
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• <strong>Credit Summary Table</strong> - shows Syllabus (Required), Credited, and Remaining</li>
                 <li>• <strong>Editable credited values</strong> - click any credited cell to manually override</li>
@@ -643,6 +682,17 @@ const App = () => {
       {/* Credit Transfer - Light Theme */}
       {activeCreditDesign === 'light' && (
         <CreditTransferViewLight
+          isOpen={isCreditTransferOpen}
+          onClose={() => setIsCreditTransferOpen(false)}
+          studentId="17094"
+          studentCode="NRO"
+          studentName="Nuno Rodrigues"
+        />
+      )}
+
+      {/* Credit Transfer - Simple Mode (Inline Editing) */}
+      {activeCreditDesign === 'simple' && (
+        <CreditTransferViewSimple
           isOpen={isCreditTransferOpen}
           onClose={() => setIsCreditTransferOpen(false)}
           studentId="17094"
