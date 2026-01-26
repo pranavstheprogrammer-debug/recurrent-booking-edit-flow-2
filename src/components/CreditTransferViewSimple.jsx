@@ -1312,20 +1312,6 @@ const CreditTransferViewSimple = ({
               </div>
             </div>
 
-            {/* Overall Progress Card */}
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-gray-600">Events Credited</span>
-                <ProgressRing progress={overallStats.eventProgress} size={36} strokeWidth={3} color="emerald" />
-              </div>
-              <div className="text-xl font-bold text-gray-900">
-                {overallStats.creditedEvents} <span className="text-sm font-normal text-gray-500">/ {overallStats.totalEvents}</span>
-              </div>
-              <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden mt-2">
-                <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${overallStats.eventProgress}%` }} />
-              </div>
-            </div>
-
             {/* Objectives Overview with inline editing */}
             <ObjectivesOverview
               sections={sections}
