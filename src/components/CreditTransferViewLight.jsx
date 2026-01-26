@@ -334,7 +334,7 @@ const ObjectivesOverview = ({ sections, manualCredits = {}, onManualCreditChange
               </div>
 
               {/* Show breakdown if there's manual credit */}
-              {obj.manualCredit > 0 && (
+              {obj.manualCredit > 0 && !isPopoverOpen && (
                 <div className="flex items-center gap-1 mt-0.5">
                   <span className="text-[8px] text-gray-400">
                     +{formatTime(obj.manualCredit)} manual
@@ -342,28 +342,29 @@ const ObjectivesOverview = ({ sections, manualCredits = {}, onManualCreditChange
                 </div>
               )}
 
-              <div className="h-0.5 bg-gray-200 rounded-full overflow-hidden mt-1.5">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    obj.isComplete
-                      ? 'bg-emerald-500'
-                      : obj.progress > 50
-                        ? 'bg-blue-500'
-                        : 'bg-gray-400'
-                  }`}
-                  style={{ width: `${Math.min(obj.progress, 100)}%` }}
-                />
-              </div>
+              {!isPopoverOpen && (
+                <div className="h-0.5 bg-gray-200 rounded-full overflow-hidden mt-1.5">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      obj.isComplete
+                        ? 'bg-emerald-500'
+                        : obj.progress > 50
+                          ? 'bg-blue-500'
+                          : 'bg-gray-400'
+                    }`}
+                    style={{ width: `${Math.min(obj.progress, 100)}%` }}
+                  />
+                </div>
+              )}
 
-              {/* Credit Popover */}
+              {/* Inline Credit Input */}
               {isPopoverOpen && onManualCreditChange && (
-                <CreditTimePopover
+                <InlineCreditTimeInput
                   isOpen={true}
                   onClose={() => setActivePopover(null)}
                   objective={obj}
-                  currentValue={obj.manualCredit}
+                  currentValue={obj.globalManualCredit}
                   onSave={(value) => onManualCreditChange('global', obj.key, value)}
-                  position="bottom"
                 />
               )}
             </div>
@@ -551,146 +552,113 @@ const EditableTimeInput = ({ value, onChange, label, placeholder = "0:00", size 
 };
 
 // ============================================================================
-// CREDIT TIME POPOVER - Clean minimal UI for adding manual credits
+// INLINE CREDIT TIME INPUT - Light theme (replaces popover to prevent overflow)
 // ============================================================================
 
-const CreditTimePopover = ({
+const InlineCreditTimeInput = ({
   isOpen,
   onClose,
   objective,
   currentValue = 0,
   onSave,
-  position = 'bottom'
 }) => {
-  const [hours, setHours] = useState(Math.floor(currentValue / 60));
-  const [minutes, setMinutes] = useState(currentValue % 60);
-  const popoverRef = useRef(null);
+  const [totalMinutes, setTotalMinutes] = useState(currentValue);
+  const inputRef = useRef(null);
 
   useEffect(() => {
-    setHours(Math.floor(currentValue / 60));
-    setMinutes(currentValue % 60);
+    setTotalMinutes(currentValue);
   }, [currentValue, isOpen]);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
-        onClose();
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
     }
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
-  const handleSave = () => {
-    const totalMinutes = (parseInt(hours) || 0) * 60 + (parseInt(minutes) || 0);
-    onSave(totalMinutes);
+  const handleSave = (value) => {
+    onSave(value);
     onClose();
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') handleSave();
+    if (e.key === 'Enter') handleSave(totalMinutes);
     if (e.key === 'Escape') onClose();
+  };
+
+  const adjustTime = (delta) => {
+    const newValue = Math.max(0, totalMinutes + delta);
+    setTotalMinutes(newValue);
+  };
+
+  const quickAddTime = (mins) => {
+    const newValue = totalMinutes + mins;
+    setTotalMinutes(newValue);
   };
 
   if (!isOpen) return null;
 
   const colors = objective ? getColorClasses(objective.color) : {};
+  const displayTime = formatTime(totalMinutes) === '—' ? '0:00' : formatTime(totalMinutes);
 
   return (
-    <div
-      ref={popoverRef}
-      className={`
-        absolute z-50 ${position === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'} left-1/2 -translate-x-1/2
-        bg-white rounded-xl shadow-2xl border border-gray-200 p-3 w-52
-        animate-scaleIn origin-top
-      `}
-    >
-      {/* Arrow */}
-      <div className={`
-        absolute left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-gray-200 rotate-45
-        ${position === 'top' ? '-bottom-1.5 border-r border-b' : '-top-1.5 border-l border-t'}
-      `} />
-
-      <div className="relative">
-        {/* Header */}
-        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
-          <div className={`w-2.5 h-2.5 rounded-full bg-gradient-to-br ${colors.gradient || 'from-blue-500 to-blue-600'}`} />
-          <span className="text-xs font-semibold text-gray-700">
-            Credit {objective?.label || 'Time'}
-          </span>
-          <CreditIcon className="w-3.5 h-3.5 text-gray-400 ml-auto" />
-        </div>
-
-        {/* Time Inputs */}
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <div className="flex flex-col items-center">
-            <input
-              type="number"
-              min="0"
-              max="999"
-              value={hours}
-              onChange={(e) => setHours(Math.max(0, parseInt(e.target.value) || 0))}
-              onKeyDown={handleKeyDown}
-              className="w-14 h-10 text-center text-lg font-bold font-mono border-2 border-gray-200
-                         rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20
-                         transition-all outline-none"
-              autoFocus
-            />
-            <span className="text-[10px] text-gray-400 mt-1">hours</span>
-          </div>
-          <span className="text-xl font-bold text-gray-400 mb-4">:</span>
-          <div className="flex flex-col items-center">
-            <input
-              type="number"
-              min="0"
-              max="59"
-              value={minutes.toString().padStart(2, '0')}
-              onChange={(e) => setMinutes(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
-              onKeyDown={handleKeyDown}
-              className="w-14 h-10 text-center text-lg font-bold font-mono border-2 border-gray-200
-                         rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20
-                         transition-all outline-none"
-            />
-            <span className="text-[10px] text-gray-400 mt-1">mins</span>
-          </div>
-        </div>
-
-        {/* Quick Add Buttons */}
-        <div className="flex gap-1 mb-3">
-          {[15, 30, 60].map(mins => (
-            <button
-              key={mins}
-              onClick={() => {
-                const total = hours * 60 + minutes + mins;
-                setHours(Math.floor(total / 60));
-                setMinutes(total % 60);
-              }}
-              className="flex-1 py-1 text-[10px] font-semibold text-gray-600 bg-gray-100
-                         hover:bg-gray-200 rounded-md transition-colors"
-            >
-              +{mins >= 60 ? `${mins/60}h` : `${mins}m`}
-            </button>
-          ))}
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-2">
+    <div className="mt-2 pt-2 border-t border-gray-200 animate-fadeIn">
+      {/* Quick add buttons - positioned above input */}
+      <div className="flex justify-center gap-1 mb-2">
+        {[15, 30, 60].map(mins => (
           <button
-            onClick={onClose}
-            className="flex-1 py-1.5 text-xs font-semibold text-gray-600 bg-gray-100
-                       hover:bg-gray-200 rounded-lg transition-colors"
+            key={mins}
+            onClick={(e) => {
+              e.stopPropagation();
+              quickAddTime(mins);
+            }}
+            className={`px-2 py-0.5 text-[9px] font-semibold rounded transition-colors
+              bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800`}
           >
-            Cancel
+            +{mins >= 60 ? `${mins/60}h` : `${mins}m`}
           </button>
+        ))}
+      </div>
+
+      {/* Compact time input row */}
+      <div className="flex items-center justify-between gap-1">
+        <span className="text-[8px] text-gray-400 uppercase font-medium">Manual</span>
+        <div className="flex items-center gap-1 bg-gray-100 rounded-lg px-1 py-0.5">
           <button
-            onClick={handleSave}
-            className={`flex-1 py-1.5 text-xs font-semibold text-white
-                       bg-gradient-to-r ${colors.gradient || 'from-blue-500 to-blue-600'}
-                       hover:shadow-lg rounded-lg transition-all`}
+            onClick={(e) => {
+              e.stopPropagation();
+              adjustTime(-15);
+            }}
+            className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors"
           >
-            Save
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
+            </svg>
+          </button>
+          <input
+            ref={inputRef}
+            type="text"
+            value={displayTime}
+            onChange={(e) => {
+              const parsed = parseTime(e.target.value);
+              if (parsed !== null) setTotalMinutes(parsed);
+            }}
+            onKeyDown={handleKeyDown}
+            onBlur={() => handleSave(totalMinutes)}
+            onClick={(e) => e.stopPropagation()}
+            className="w-10 h-5 text-center text-[11px] font-bold font-mono bg-transparent
+                       text-gray-800 border-none outline-none focus:ring-0"
+          />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              adjustTime(15);
+            }}
+            className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors"
+          >
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
           </button>
         </div>
       </div>
