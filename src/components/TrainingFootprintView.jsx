@@ -129,6 +129,23 @@ const getGradeColor = (grade) => {
   return 'bg-red-100 text-red-700 border-red-200';
 };
 
+// Get color classes for an objective type (matching Training Credit view)
+const getColorClasses = (color) => {
+  const colors = {
+    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', progress: 'bg-emerald-500', gradient: 'from-emerald-500 to-emerald-600' },
+    blue: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', progress: 'bg-blue-500', gradient: 'from-blue-500 to-blue-600' },
+    indigo: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', progress: 'bg-indigo-500', gradient: 'from-indigo-500 to-indigo-600' },
+    purple: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', progress: 'bg-purple-500', gradient: 'from-purple-500 to-purple-600' },
+    amber: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', progress: 'bg-amber-500', gradient: 'from-amber-500 to-amber-600' },
+    slate: { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-300', progress: 'bg-slate-500', gradient: 'from-slate-500 to-slate-600' },
+    rose: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', progress: 'bg-rose-500', gradient: 'from-rose-500 to-rose-600' },
+    cyan: { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200', progress: 'bg-cyan-500', gradient: 'from-cyan-500 to-cyan-600' },
+    teal: { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200', progress: 'bg-teal-500', gradient: 'from-teal-500 to-teal-600' },
+    violet: { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200', progress: 'bg-violet-500', gradient: 'from-violet-500 to-violet-600' },
+  };
+  return colors[color] || colors.blue;
+};
+
 // ============================================================================
 // ICON COMPONENTS
 // ============================================================================
@@ -250,9 +267,10 @@ const ObjectivesBar = ({ objectives, isExpanded, onToggle }) => {
             <div className="hidden sm:flex items-center gap-2 ml-4">
               {stats.slice(0, 4).map(obj => (
                 <div key={obj.key} className="flex items-center gap-1.5">
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 bg-gradient-to-br ${getColorClasses(obj.color).gradient}`} />
                   <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all ${getProgressColor(obj.progress)}`}
+                      className={`h-full rounded-full transition-all ${getColorClasses(obj.color).progress}`}
                       style={{ width: `${obj.progress}%` }}
                     />
                   </div>
@@ -298,7 +316,10 @@ const ObjectivesBar = ({ objectives, isExpanded, onToggle }) => {
                 `}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-gray-700">{obj.label}</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 bg-gradient-to-br ${getColorClasses(obj.color).gradient}`} />
+                    <span className="text-xs font-semibold text-gray-700">{obj.label}</span>
+                  </div>
                   {obj.isComplete && (
                     <CheckCircleIcon className="w-4 h-4 text-emerald-500" />
                   )}
@@ -314,9 +335,7 @@ const ObjectivesBar = ({ objectives, isExpanded, onToggle }) => {
 
                 <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all ${
-                      obj.isComplete ? 'bg-emerald-500' : getProgressColor(obj.progress)
-                    }`}
+                    className={`h-full rounded-full transition-all ${getColorClasses(obj.color).progress}`}
                     style={{ width: `${obj.progress}%` }}
                   />
                 </div>
