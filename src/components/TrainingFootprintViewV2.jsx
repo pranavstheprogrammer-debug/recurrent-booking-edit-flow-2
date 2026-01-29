@@ -29,14 +29,14 @@ const OBJECTIVE_TYPES = [
 
 // Sample data - objectives with planned, executed, credited, extended, total tracking
 const INITIAL_OBJECTIVES = {
-  flightTime: { planned: 1800, executed: 240, credited: 60, extended: 0, required: 1800, unit: 'h' },
-  dualTime: { planned: 1800, executed: 200, credited: 40, extended: 0, required: 1800, unit: 'h' },
+  flightTime: { planned: 1800, executed: 240, credited: 180, extended: 120, required: 1800, unit: 'h' },
+  dualTime: { planned: 1800, executed: 200, credited: 120, extended: 90, required: 1800, unit: 'h' },
   soloTime: { planned: 60, executed: 0, credited: 0, extended: 0, required: 60, unit: 'h' },
-  spicTime: { planned: 2400, executed: 120, credited: 0, extended: 30, required: 2400, unit: 'h' },
-  vfrDual: { planned: 2400, executed: 180, credited: 60, extended: 0, required: 2400, unit: 'h' },
+  spicTime: { planned: 2400, executed: 120, credited: 60, extended: 150, required: 2400, unit: 'h' },
+  vfrDual: { planned: 2400, executed: 180, credited: 150, extended: 90, required: 2400, unit: 'h' },
   vfrSolo: { planned: 60, executed: 0, credited: 0, extended: 0, required: 60, unit: 'h' },
-  vfrSim: { planned: 1800, executed: 90, credited: 0, extended: 0, required: 1800, unit: 'h' },
-  ifrDual: { planned: 1800, executed: 60, credited: 30, extended: 15, required: 1800, unit: 'h' },
+  vfrSim: { planned: 1800, executed: 90, credited: 45, extended: 60, required: 1800, unit: 'h' },
+  ifrDual: { planned: 1800, executed: 60, credited: 90, extended: 75, required: 1800, unit: 'h' },
 };
 
 // Training events with bookings
@@ -44,11 +44,11 @@ const INITIAL_SECTIONS = [
   {
     id: 'vfr-basic',
     name: 'VFR Basic Training',
-    creditedTime: 30, // Only VCON02 has 30 min credited
+    creditedTime: 90, // VCON01 (30) + VCON02 (45) + VCON03 (15) credited
     objectives: {
       // Total: VCON01 (115) + VCON02 (85) + VCON03 (118+110=228) = 428 executed
-      // Credited: Only VCON02 has 30 credited
-      flightTime: { target: 360, executed: 428, credited: 30 },
+      // Credited: VCON01 (30) + VCON02 (45) + VCON03 (15) = 90 credited
+      flightTime: { target: 360, executed: 428, credited: 90 },
       soloTime: { target: 0, executed: 0, credited: 0 },
     },
     events: [
@@ -57,9 +57,9 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_6_VCON01',
         name: 'VCON 01 - Basic Visual Circuits',
         plannedTime: 120,
-        creditedTime: 0,
+        creditedTime: 30,
         objectives: {
-          flightTime: { target: 120, executed: 115, credited: 0 },
+          flightTime: { target: 120, executed: 115, credited: 30 },
           soloTime: { target: 0, executed: 0, credited: 0 },
         },
         bookings: [
@@ -71,9 +71,9 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_6_VCON02',
         name: 'VCON 02 - Advanced Circuits',
         plannedTime: 120,
-        creditedTime: 30,
+        creditedTime: 45,
         objectives: {
-          flightTime: { target: 120, executed: 85, credited: 30 },
+          flightTime: { target: 120, executed: 85, credited: 45 },
           soloTime: { target: 0, executed: 0, credited: 0 },
         },
         bookings: [
@@ -85,9 +85,9 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_6_VCON03',
         name: 'VCON 03 - Circuit Emergencies',
         plannedTime: 120,
-        creditedTime: 0,
+        creditedTime: 15,
         objectives: {
-          flightTime: { target: 120, executed: 228, credited: 0 },
+          flightTime: { target: 120, executed: 228, credited: 15 },
           soloTime: { target: 0, executed: 0, credited: 0 },
         },
         bookings: [
@@ -100,9 +100,9 @@ const INITIAL_SECTIONS = [
   {
     id: 'vfr-advanced',
     name: 'VFR Advanced Training',
-    creditedTime: 0,
+    creditedTime: 75, // VCON04 (25) + VCON05 (35) + VCON06 (15) credited
     objectives: {
-      flightTime: { target: 330, executed: 536, credited: 0 },
+      flightTime: { target: 330, executed: 536, credited: 75 },
       soloTime: { target: 30, executed: 0, credited: 0 },
     },
     events: [
@@ -111,9 +111,9 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_6_VCON04',
         name: 'VCON 04 - Cross-wind Operations',
         plannedTime: 120,
-        creditedTime: 0,
+        creditedTime: 25,
         objectives: {
-          flightTime: { target: 120, executed: 343, credited: 0 },
+          flightTime: { target: 120, executed: 343, credited: 25 },
           soloTime: { target: 0, executed: 0, credited: 0 },
         },
         bookings: [
@@ -127,9 +127,9 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_6_VCON05',
         name: 'VCON 05 - Night Circuits',
         plannedTime: 120,
-        creditedTime: 0,
+        creditedTime: 35,
         objectives: {
-          flightTime: { target: 120, executed: 105, credited: 0 },
+          flightTime: { target: 120, executed: 105, credited: 35 },
           soloTime: { target: 0, executed: 0, credited: 0 },
         },
         bookings: [
@@ -141,9 +141,9 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_6_VCON06',
         name: 'VCON 06 - Formation Flying Basics',
         plannedTime: 90,
-        creditedTime: 0,
+        creditedTime: 15,
         objectives: {
-          flightTime: { target: 90, executed: 88, credited: 0 },
+          flightTime: { target: 90, executed: 88, credited: 15 },
           soloTime: { target: 30, executed: 0, credited: 0 },
         },
         bookings: [
@@ -155,11 +155,11 @@ const INITIAL_SECTIONS = [
   {
     id: 'ifr-training',
     name: 'IFR Instrument Training',
-    creditedTime: 30, // Only IFR01 has 30 min credited
+    creditedTime: 105, // IFR01 (45) + IFR02 (30) + IFR03 (30) credited
     objectives: {
       // Total: IFR01 (58) + IFR02 (110) + IFR03 (115) + IFR04 (0) = 283 executed
-      // Credited: Only IFR01 has 30 credited
-      flightTime: { target: 420, executed: 283, credited: 30 },
+      // Credited: IFR01 (45) + IFR02 (30) + IFR03 (30) = 105 credited
+      flightTime: { target: 420, executed: 283, credited: 105 },
       soloTime: { target: 0, executed: 0, credited: 0 },
     },
     events: [
@@ -168,9 +168,9 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_7_IFR01',
         name: 'IFR 01 - Basic Instrument Scan',
         plannedTime: 90,
-        creditedTime: 30,
+        creditedTime: 45,
         objectives: {
-          flightTime: { target: 90, executed: 58, credited: 30 },
+          flightTime: { target: 90, executed: 58, credited: 45 },
           soloTime: { target: 0, executed: 0, credited: 0 },
         },
         bookings: [
@@ -182,9 +182,9 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_7_IFR02',
         name: 'IFR 02 - Holding Patterns',
         plannedTime: 120,
-        creditedTime: 0,
+        creditedTime: 30,
         objectives: {
-          flightTime: { target: 120, executed: 110, credited: 0 },
+          flightTime: { target: 120, executed: 110, credited: 30 },
           soloTime: { target: 0, executed: 0, credited: 0 },
         },
         bookings: [
@@ -196,9 +196,9 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_7_IFR03',
         name: 'IFR 03 - ILS Approaches',
         plannedTime: 120,
-        creditedTime: 0,
+        creditedTime: 30,
         objectives: {
-          flightTime: { target: 120, executed: 115, credited: 0 },
+          flightTime: { target: 120, executed: 115, credited: 30 },
           soloTime: { target: 0, executed: 0, credited: 0 },
         },
         bookings: [
@@ -222,9 +222,9 @@ const INITIAL_SECTIONS = [
   {
     id: 'sim-training',
     name: 'Simulator Training',
-    creditedTime: 0,
+    creditedTime: 75, // SIM01 (40) + SIM02 (35) credited
     objectives: {
-      flightTime: { target: 840, executed: 345, credited: 0 },
+      flightTime: { target: 840, executed: 345, credited: 75 },
       soloTime: { target: 0, executed: 0, credited: 0 },
     },
     events: [
@@ -233,9 +233,9 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_8_SIM01',
         name: 'SIM 01 - Emergency Procedures',
         plannedTime: 180,
-        creditedTime: 0,
+        creditedTime: 40,
         objectives: {
-          flightTime: { target: 180, executed: 170, credited: 0 },
+          flightTime: { target: 180, executed: 170, credited: 40 },
           soloTime: { target: 0, executed: 0, credited: 0 },
         },
         bookings: [
@@ -247,9 +247,9 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_8_SIM02',
         name: 'SIM 02 - Engine Failure Scenarios',
         plannedTime: 180,
-        creditedTime: 0,
+        creditedTime: 35,
         objectives: {
-          flightTime: { target: 180, executed: 175, credited: 0 },
+          flightTime: { target: 180, executed: 175, credited: 35 },
           soloTime: { target: 0, executed: 0, credited: 0 },
         },
         bookings: [
