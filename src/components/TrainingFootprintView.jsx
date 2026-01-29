@@ -37,14 +37,14 @@ const OBJECTIVE_TYPES = [
 // Sample data - objectives with planned, executed, credited, extended, total tracking
 // Note: Executed <= Planned always; Total = Executed + Credited + Extended
 const INITIAL_OBJECTIVES = {
-  flightTime: { planned: 1800, executed: 240, credited: 60, extended: 0, required: 1800, unit: 'h' },
-  dualTime: { planned: 1800, executed: 200, credited: 40, extended: 0, required: 1800, unit: 'h' },
-  soloTime: { planned: 60, executed: 0, credited: 0, extended: 0, required: 60, unit: 'h' },  // No credit/extended
-  spicTime: { planned: 2400, executed: 120, credited: 0, extended: 30, required: 2400, unit: 'h' },  // No credit
-  vfrDual: { planned: 2400, executed: 180, credited: 60, extended: 0, required: 2400, unit: 'h' },
-  vfrSolo: { planned: 60, executed: 0, credited: 0, extended: 0, required: 60, unit: 'h' },  // No credit/extended
-  vfrSim: { planned: 1800, executed: 90, credited: 0, extended: 0, required: 1800, unit: 'h' },  // No credit/extended
-  ifrDual: { planned: 1800, executed: 60, credited: 30, extended: 15, required: 1800, unit: 'h' },
+  flightTime: { planned: 1800, executed: 240, credited: 180, extended: 120, required: 1800, unit: 'h' },
+  dualTime: { planned: 1800, executed: 200, credited: 120, extended: 90, required: 1800, unit: 'h' },
+  soloTime: { planned: 60, executed: 0, credited: 0, extended: 0, required: 60, unit: 'h' },
+  spicTime: { planned: 2400, executed: 120, credited: 60, extended: 150, required: 2400, unit: 'h' },
+  vfrDual: { planned: 2400, executed: 180, credited: 150, extended: 90, required: 2400, unit: 'h' },
+  vfrSolo: { planned: 60, executed: 0, credited: 0, extended: 0, required: 60, unit: 'h' },
+  vfrSim: { planned: 1800, executed: 90, credited: 45, extended: 60, required: 1800, unit: 'h' },
+  ifrDual: { planned: 1800, executed: 60, credited: 90, extended: 75, required: 1800, unit: 'h' },
 };
 
 // Training events with bookings - each booking now has executedTime
@@ -54,14 +54,14 @@ const INITIAL_SECTIONS = [
   {
     id: 'vfr-basic',
     name: 'VFR Basic Training',
-    creditedTime: 30, // Only VCON02 has 30 min credited for prior experience
+    creditedTime: 90, // VCON01 (30) + VCON02 (45) + VCON03 (15) credited
     events: [
       {
         id: 'vcon01',
         eventCode: 'ATPA_6_VCON01',
         name: 'VCON 01 - Basic Visual Circuits',
         plannedTime: 120, // 2 hours planned
-        creditedTime: 0, // No prior credit for this event
+        creditedTime: 30, // Prior credit for this event
         bookings: [
           { id: 'b1', date: '28/01/2026', status: 'Executed', executedTime: 115, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Good execution.', instructor: 'F-PSI' },
         ]
@@ -71,7 +71,7 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_6_VCON02',
         name: 'VCON 02 - Advanced Circuits',
         plannedTime: 120,
-        creditedTime: 30, // 30 min credited for prior experience
+        creditedTime: 45, // 45 min credited for prior experience
         bookings: [
           { id: 'b2', date: '28/01/2026', status: 'Executed', executedTime: 85, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Credit applied for prior experience.', instructor: 'F-PSI' },
         ]
@@ -81,7 +81,7 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_6_VCON03',
         name: 'VCON 03 - Circuit Emergencies',
         plannedTime: 120,
-        creditedTime: 0,
+        creditedTime: 15,
         bookings: [
           { id: 'b3', date: '27/01/2026', status: 'Executed', executedTime: 118, grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Needs improvement', instructor: 'F-PSI' },
           { id: 'b4', date: '28/01/2026', status: 'Executed', executedTime: 110, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Passed on retry', instructor: 'F-PSI' },
@@ -90,18 +90,18 @@ const INITIAL_SECTIONS = [
     ]
   },
 
-  // Section 2: VFR Advanced - No credited time (clean start)
+  // Section 2: VFR Advanced - Has credited time
   {
     id: 'vfr-advanced',
     name: 'VFR Advanced Training',
-    creditedTime: 0, // No section-level credit
+    creditedTime: 75, // VCON04 (25) + VCON05 (35) + VCON06 (15) credited
     events: [
       {
         id: 'vcon04',
         eventCode: 'ATPA_6_VCON04',
         name: 'VCON 04 - Cross-wind Operations',
         plannedTime: 120,
-        creditedTime: 0, // No credit
+        creditedTime: 25,
         bookings: [
           { id: 'b5', date: '25/01/2026', status: 'Executed', executedTime: 115, grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Failed - needs practice', instructor: 'F-PSI' },
           { id: 'b6', date: '26/01/2026', status: 'Executed', executedTime: 110, grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Still struggling', instructor: 'F-PSI' },
@@ -113,7 +113,7 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_6_VCON05',
         name: 'VCON 05 - Night Circuits',
         plannedTime: 120,
-        creditedTime: 0,
+        creditedTime: 35,
         bookings: [
           { id: 'b8', date: '28/01/2026', status: 'Executed', executedTime: 105, grade: 4, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Satisfactory performance.', instructor: 'F-PSI' },
         ]
@@ -123,7 +123,7 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_6_VCON06',
         name: 'VCON 06 - Formation Flying Basics',
         plannedTime: 90,
-        creditedTime: 0,
+        creditedTime: 15,
         bookings: [
           { id: 'b9', date: '29/01/2026', status: 'Executed', executedTime: 88, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Excellent spacing maintained.', instructor: 'J-LIN' },
         ]
@@ -135,14 +135,14 @@ const INITIAL_SECTIONS = [
   {
     id: 'ifr-training',
     name: 'IFR Instrument Training',
-    creditedTime: 30, // Only IFR01 has 30 min credited for prior instrument experience
+    creditedTime: 105, // IFR01 (45) + IFR02 (30) + IFR03 (30) credited
     events: [
       {
         id: 'ifr01',
         eventCode: 'ATPA_7_IFR01',
         name: 'IFR 01 - Basic Instrument Scan',
         plannedTime: 90,
-        creditedTime: 30, // 30 min credited
+        creditedTime: 45, // 45 min credited
         bookings: [
           { id: 'b10', date: '20/01/2026', status: 'Executed', executedTime: 58, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Credit applied. Good scan technique.', instructor: 'M-KAR' },
         ]
@@ -152,7 +152,7 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_7_IFR02',
         name: 'IFR 02 - Holding Patterns',
         plannedTime: 120,
-        creditedTime: 0, // No credit
+        creditedTime: 30, // 30 min credited
         bookings: [
           { id: 'b11', date: '21/01/2026', status: 'Executed', executedTime: 110, grade: 4, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Minor timing corrections needed.', instructor: 'M-KAR' },
         ]
@@ -162,7 +162,7 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_7_IFR03',
         name: 'IFR 03 - ILS Approaches',
         plannedTime: 120,
-        creditedTime: 0,
+        creditedTime: 30, // 30 min credited
         bookings: [
           { id: 'b12', date: '22/01/2026', status: 'Executed', executedTime: 115, grade: 3, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Glideslope tracking needs work.', instructor: 'M-KAR' },
         ]
@@ -178,18 +178,18 @@ const INITIAL_SECTIONS = [
     ]
   },
 
-  // Section 4: Simulator Training - No credited time, no extended time (clean execution)
+  // Section 4: Simulator Training - Has credited time
   {
     id: 'sim-training',
     name: 'Simulator Training',
-    creditedTime: 0, // No section-level credit
+    creditedTime: 75, // SIM01 (40) + SIM02 (35) credited
     events: [
       {
         id: 'sim01',
         eventCode: 'ATPA_8_SIM01',
         name: 'SIM 01 - Emergency Procedures',
         plannedTime: 180, // 3 hours
-        creditedTime: 0,
+        creditedTime: 40,
         bookings: [
           { id: 'b13', date: '15/01/2026', status: 'Executed', executedTime: 170, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Excellent emergency handling.', instructor: 'R-DAS' },
         ]
@@ -199,7 +199,7 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_8_SIM02',
         name: 'SIM 02 - Engine Failure Scenarios',
         plannedTime: 180,
-        creditedTime: 0,
+        creditedTime: 35,
         bookings: [
           { id: 'b14', date: '16/01/2026', status: 'Executed', executedTime: 175, grade: 4, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Good decision making.', instructor: 'R-DAS' },
         ]
