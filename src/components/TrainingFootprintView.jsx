@@ -54,7 +54,7 @@ const INITIAL_SECTIONS = [
   {
     id: 'vfr-basic',
     name: 'VFR Basic Training',
-    creditedTime: 60, // 1 hour credited to section for prior experience
+    creditedTime: 30, // Only VCON02 has 30 min credited for prior experience
     events: [
       {
         id: 'vcon01',
@@ -135,7 +135,7 @@ const INITIAL_SECTIONS = [
   {
     id: 'ifr-training',
     name: 'IFR Instrument Training',
-    creditedTime: 45, // 45 min credited for prior instrument experience
+    creditedTime: 30, // Only IFR01 has 30 min credited for prior instrument experience
     events: [
       {
         id: 'ifr01',
