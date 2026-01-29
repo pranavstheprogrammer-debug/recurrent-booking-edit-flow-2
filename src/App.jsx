@@ -9,6 +9,7 @@ import CreditTransferView from '@components/CreditTransferView';
 import CreditTransferViewDark from '@components/CreditTransferViewDark';
 import CreditTransferViewLight from '@components/CreditTransferViewLight';
 import CreditTransferViewSimple from '@components/CreditTransferViewSimple';
+import TrainingFootprintView from '@components/TrainingFootprintView';
 import Toast from '@components/Toast';
 
 const App = () => {
@@ -18,6 +19,7 @@ const App = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreditTransferOpen, setIsCreditTransferOpen] = useState(false);
+  const [isFootprintViewOpen, setIsFootprintViewOpen] = useState(false);
   const [toast, setToast] = useState({ isVisible: false, message: '', description: '' });
 
   const handleSave = (formData, editScope) => {
@@ -611,6 +613,109 @@ const App = () => {
             )}
           </div>
         </div>
+
+        {/* ========== TRAINING FOOTPRINT SECTION ========== */}
+        <div className="mt-8 pt-8 border-t-2 border-gray-300">
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Training Footprint View</h2>
+          <p className="text-sm text-gray-500 mb-6">Modern redesign of the training report footprint with grouped events and time tracking</p>
+        </div>
+
+        {/* Footprint - Design Overview */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Design Improvements</h2>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Before */}
+            <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+              <h3 className="font-medium text-red-800 mb-3 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Before: Flat Table View
+              </h3>
+              <ul className="space-y-2 text-sm text-red-700">
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">!</span>
+                  <span>Repeated events shown as separate rows</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">!</span>
+                  <span>Objectives overview takes too much space</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">!</span>
+                  <span>No clear indication of extended time</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">!</span>
+                  <span>Hard to see which events were repeated due to failures</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* After */}
+            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+              <h3 className="font-medium text-green-800 mb-3 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                After: Grouped Modern View
+              </h3>
+              <ul className="space-y-2 text-sm text-green-700">
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
+                  <span><strong>Grouped events</strong> - Same event consolidated with expand</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
+                  <span><strong>Collapsible objectives</strong> - Space-efficient overview bar</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
+                  <span><strong>Clear time tracking</strong> - Planned, Credited, Extended</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
+                  <span><strong>Repeat indicators</strong> - Badge shows repeat count</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Footprint - Demo Trigger */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Training Footprint Demo</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Click the button below to see the modern Training Footprint View in action.
+          </p>
+
+          <button
+            onClick={() => setIsFootprintViewOpen(true)}
+            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-colors flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            Open Training Footprint
+          </button>
+
+          {/* Instructions */}
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <h3 className="font-medium text-gray-800 text-sm mb-2">Key features to explore:</h3>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• <strong>Collapsible Objectives Bar</strong> - Click to expand/collapse the objectives overview</li>
+              <li>• <strong>Progress Mini-bars</strong> - Quick visual progress when objectives are collapsed</li>
+              <li>• <strong>Grouped Training Events</strong> - Repeated events consolidated into one row</li>
+              <li>• <strong>Repeat Badge</strong> - Shows "2x", "3x" etc. when event was repeated</li>
+              <li>• <strong>Time Columns</strong> - Planned (original), Credited (passed), Extended (extra due to repeats)</li>
+              <li>• <strong>Expandable Bookings</strong> - Click any event row to see individual bookings</li>
+              <li>• <strong>Grade Indicators</strong> - Color-coded grades (green = pass, red = fail)</li>
+              <li>• <strong>Section Summaries</strong> - Total times at section level</li>
+              <li>• <strong>Overall Progress Card</strong> - Summary stats with circular progress</li>
+            </ul>
+          </div>
+        </div>
       </div>
 
       {/* The Unified Modal - Standard Design */}
@@ -699,6 +804,28 @@ const App = () => {
           studentCode="NRO"
           studentName="Nuno Rodrigues"
         />
+      )}
+
+      {/* Training Footprint View - Full Page Overlay */}
+      {isFootprintViewOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-sm" onClick={() => setIsFootprintViewOpen(false)} />
+          <div className="absolute inset-0 overflow-auto bg-gray-100">
+            {/* Close button */}
+            <button
+              onClick={() => setIsFootprintViewOpen(false)}
+              className="fixed top-4 right-4 z-50 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors"
+            >
+              <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <TrainingFootprintView
+              studentName="Dalda Malda"
+              programCode="TC 1"
+            />
+          </div>
+        </div>
       )}
 
       {/* Toast Notification (replaces the "Update Complete" modal) */}
