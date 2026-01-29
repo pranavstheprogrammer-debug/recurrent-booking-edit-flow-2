@@ -34,23 +34,26 @@ const OBJECTIVE_TYPES = [
   { key: 'ifrDual', label: 'IFR Dual', shortLabel: 'IFR-D', color: 'amber', icon: '🌙' },
 ];
 
-// Sample data matching the screenshot - objectives with credited and required hours
+// Sample data - objectives with planned, executed, credited, extended, total tracking
+// Note: Executed <= Planned always; Total = Executed + Credited + Extended
 const INITIAL_OBJECTIVES = {
-  flightTime: { credited: 240, required: 1800, unit: 'h' },
-  dualTime: { credited: 240, required: 1800, unit: 'h' },
-  soloTime: { credited: 0, required: 60, unit: 'h' },
-  spicTime: { credited: 0, required: 2400, unit: 'h' },
-  vfrDual: { credited: 240, required: 2400, unit: 'h' },
-  vfrSolo: { credited: 0, required: 60, unit: 'h' },
-  vfrSim: { credited: 0, required: 1800, unit: 'h' },
-  ifrDual: { credited: 0, required: 1800, unit: 'h' },
+  flightTime: { planned: 1800, executed: 240, credited: 60, extended: 0, required: 1800, unit: 'h' },
+  dualTime: { planned: 1800, executed: 200, credited: 40, extended: 0, required: 1800, unit: 'h' },
+  soloTime: { planned: 60, executed: 0, credited: 0, extended: 0, required: 60, unit: 'h' },  // No credit/extended
+  spicTime: { planned: 2400, executed: 120, credited: 0, extended: 30, required: 2400, unit: 'h' },  // No credit
+  vfrDual: { planned: 2400, executed: 180, credited: 60, extended: 0, required: 2400, unit: 'h' },
+  vfrSolo: { planned: 60, executed: 0, credited: 0, extended: 0, required: 60, unit: 'h' },  // No credit/extended
+  vfrSim: { planned: 1800, executed: 90, credited: 0, extended: 0, required: 1800, unit: 'h' },  // No credit/extended
+  ifrDual: { planned: 1800, executed: 60, credited: 30, extended: 15, required: 1800, unit: 'h' },
 };
 
 // Training events with bookings - each booking now has executedTime
+// Note: Executed <= Planned always; some sections have no credited/extended times
 const INITIAL_SECTIONS = [
+  // Section 1: VFR Basic Training - Has credited time at section level
   {
-    id: 'default',
-    name: 'Default Section',
+    id: 'vfr-basic',
+    name: 'VFR Basic Training',
     creditedTime: 60, // 1 hour credited to section for prior experience
     events: [
       {
@@ -60,7 +63,7 @@ const INITIAL_SECTIONS = [
         plannedTime: 120, // 2 hours planned
         creditedTime: 0, // No prior credit for this event
         bookings: [
-          { id: 'b1', date: '28/01/2026', status: 'Executed', executedTime: 115, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'done. All good.', instructor: 'F-PSI' },
+          { id: 'b1', date: '28/01/2026', status: 'Executed', executedTime: 115, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Good execution.', instructor: 'F-PSI' },
         ]
       },
       {
@@ -70,7 +73,7 @@ const INITIAL_SECTIONS = [
         plannedTime: 120,
         creditedTime: 30, // 30 min credited for prior experience
         bookings: [
-          { id: 'b2', date: '28/01/2026', status: 'Executed', executedTime: 90, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: '', instructor: 'F-PSI' },
+          { id: 'b2', date: '28/01/2026', status: 'Executed', executedTime: 85, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Credit applied for prior experience.', instructor: 'F-PSI' },
         ]
       },
       {
@@ -80,20 +83,29 @@ const INITIAL_SECTIONS = [
         plannedTime: 120,
         creditedTime: 0,
         bookings: [
-          { id: 'b3', date: '27/01/2026', status: 'Executed', executedTime: 120, grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Needs improvement', instructor: 'F-PSI' },
+          { id: 'b3', date: '27/01/2026', status: 'Executed', executedTime: 118, grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Needs improvement', instructor: 'F-PSI' },
           { id: 'b4', date: '28/01/2026', status: 'Executed', executedTime: 110, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Passed on retry', instructor: 'F-PSI' },
         ]
       },
+    ]
+  },
+
+  // Section 2: VFR Advanced - No credited time (clean start)
+  {
+    id: 'vfr-advanced',
+    name: 'VFR Advanced Training',
+    creditedTime: 0, // No section-level credit
+    events: [
       {
         id: 'vcon04',
         eventCode: 'ATPA_6_VCON04',
         name: 'VCON 04 - Cross-wind Operations',
         plannedTime: 120,
-        creditedTime: 0,
+        creditedTime: 0, // No credit
         bookings: [
-          { id: 'b5', date: '25/01/2026', status: 'Executed', executedTime: 120, grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Failed - needs practice', instructor: 'F-PSI' },
-          { id: 'b6', date: '26/01/2026', status: 'Executed', executedTime: 115, grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Still struggling', instructor: 'F-PSI' },
-          { id: 'b7', date: '28/01/2026', status: 'Executed', executedTime: 125, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Finally passed!', instructor: 'F-PSI' },
+          { id: 'b5', date: '25/01/2026', status: 'Executed', executedTime: 115, grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Failed - needs practice', instructor: 'F-PSI' },
+          { id: 'b6', date: '26/01/2026', status: 'Executed', executedTime: 110, grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Still struggling', instructor: 'F-PSI' },
+          { id: 'b7', date: '28/01/2026', status: 'Executed', executedTime: 118, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Finally passed!', instructor: 'F-PSI' },
         ]
       },
       {
@@ -103,11 +115,113 @@ const INITIAL_SECTIONS = [
         plannedTime: 120,
         creditedTime: 0,
         bookings: [
-          { id: 'b8', date: '28/01/2026', status: 'Executed', executedTime: 118, grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: '', instructor: 'F-PSI' },
+          { id: 'b8', date: '28/01/2026', status: 'Executed', executedTime: 105, grade: 4, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Satisfactory performance.', instructor: 'F-PSI' },
+        ]
+      },
+      {
+        id: 'vcon06',
+        eventCode: 'ATPA_6_VCON06',
+        name: 'VCON 06 - Formation Flying Basics',
+        plannedTime: 90,
+        creditedTime: 0,
+        bookings: [
+          { id: 'b9', date: '29/01/2026', status: 'Executed', executedTime: 88, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Excellent spacing maintained.', instructor: 'J-LIN' },
         ]
       },
     ]
-  }
+  },
+
+  // Section 3: IFR Training - Has credited time, some events with no bookings
+  {
+    id: 'ifr-training',
+    name: 'IFR Instrument Training',
+    creditedTime: 45, // 45 min credited for prior instrument experience
+    events: [
+      {
+        id: 'ifr01',
+        eventCode: 'ATPA_7_IFR01',
+        name: 'IFR 01 - Basic Instrument Scan',
+        plannedTime: 90,
+        creditedTime: 30, // 30 min credited
+        bookings: [
+          { id: 'b10', date: '20/01/2026', status: 'Executed', executedTime: 58, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Credit applied. Good scan technique.', instructor: 'M-KAR' },
+        ]
+      },
+      {
+        id: 'ifr02',
+        eventCode: 'ATPA_7_IFR02',
+        name: 'IFR 02 - Holding Patterns',
+        plannedTime: 120,
+        creditedTime: 0, // No credit
+        bookings: [
+          { id: 'b11', date: '21/01/2026', status: 'Executed', executedTime: 110, grade: 4, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Minor timing corrections needed.', instructor: 'M-KAR' },
+        ]
+      },
+      {
+        id: 'ifr03',
+        eventCode: 'ATPA_7_IFR03',
+        name: 'IFR 03 - ILS Approaches',
+        plannedTime: 120,
+        creditedTime: 0,
+        bookings: [
+          { id: 'b12', date: '22/01/2026', status: 'Executed', executedTime: 115, grade: 3, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Glideslope tracking needs work.', instructor: 'M-KAR' },
+        ]
+      },
+      {
+        id: 'ifr04',
+        eventCode: 'ATPA_7_IFR04',
+        name: 'IFR 04 - NDB Approaches',
+        plannedTime: 90,
+        creditedTime: 0,
+        bookings: [] // Not yet started - no bookings
+      },
+    ]
+  },
+
+  // Section 4: Simulator Training - No credited time, no extended time (clean execution)
+  {
+    id: 'sim-training',
+    name: 'Simulator Training',
+    creditedTime: 0, // No section-level credit
+    events: [
+      {
+        id: 'sim01',
+        eventCode: 'ATPA_8_SIM01',
+        name: 'SIM 01 - Emergency Procedures',
+        plannedTime: 180, // 3 hours
+        creditedTime: 0,
+        bookings: [
+          { id: 'b13', date: '15/01/2026', status: 'Executed', executedTime: 170, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Excellent emergency handling.', instructor: 'R-DAS' },
+        ]
+      },
+      {
+        id: 'sim02',
+        eventCode: 'ATPA_8_SIM02',
+        name: 'SIM 02 - Engine Failure Scenarios',
+        plannedTime: 180,
+        creditedTime: 0,
+        bookings: [
+          { id: 'b14', date: '16/01/2026', status: 'Executed', executedTime: 175, grade: 4, soloTime: null, vfrSolo: null, approvalStatus: 'Approved', remarks: 'Good decision making.', instructor: 'R-DAS' },
+        ]
+      },
+      {
+        id: 'sim03',
+        eventCode: 'ATPA_8_SIM03',
+        name: 'SIM 03 - Multi-Engine Operations',
+        plannedTime: 240, // 4 hours
+        creditedTime: 0,
+        bookings: [] // Not yet started
+      },
+      {
+        id: 'sim04',
+        eventCode: 'ATPA_8_SIM04',
+        name: 'SIM 04 - LOFT Scenario',
+        plannedTime: 240,
+        creditedTime: 0,
+        bookings: [] // Not yet started
+      },
+    ]
+  },
 ];
 
 // ============================================================================
@@ -423,21 +537,27 @@ const StatChip = ({ label, value, type = 'default', showPlus = false, compact = 
 const ObjectivesBar = ({ objectives, isExpanded, onToggle }) => {
   const stats = useMemo(() => {
     return OBJECTIVE_TYPES.map(obj => {
-      const data = objectives[obj.key] || { credited: 0, required: 0 };
-      const progress = data.required > 0 ? (data.credited / data.required) * 100 : 0;
+      const data = objectives[obj.key] || { planned: 0, executed: 0, credited: 0, extended: 0, required: 0 };
+      const total = (data.executed || 0) + (data.credited || 0) + (data.extended || 0);
+      const progress = data.required > 0 ? (total / data.required) * 100 : 0;
       return {
         ...obj,
-        ...data,
+        planned: data.planned || data.required || 0,
+        executed: data.executed || 0,
+        credited: data.credited || 0,
+        extended: data.extended || 0,
+        total,
+        required: data.required || 0,
         progress: Math.min(progress, 100),
-        isComplete: data.credited >= data.required && data.required > 0,
+        isComplete: total >= data.required && data.required > 0,
       };
     }).filter(obj => obj.required > 0);
   }, [objectives]);
 
   const overallProgress = useMemo(() => {
-    const total = stats.reduce((sum, s) => sum + s.required, 0);
-    const credited = stats.reduce((sum, s) => sum + s.credited, 0);
-    return total > 0 ? Math.round((credited / total) * 100) : 0;
+    const totalRequired = stats.reduce((sum, s) => sum + s.required, 0);
+    const totalAchieved = stats.reduce((sum, s) => sum + s.total, 0);
+    return totalRequired > 0 ? Math.round((totalAchieved / totalRequired) * 100) : 0;
   }, [stats]);
 
   const completedCount = stats.filter(s => s.isComplete).length;
@@ -496,10 +616,10 @@ const ObjectivesBar = ({ objectives, isExpanded, onToggle }) => {
       {/* Expanded Content */}
       <div className={`
         transition-all duration-300 ease-in-out overflow-hidden
-        ${isExpanded ? 'max-h-[400px] opacity-100' : 'max-h-0 opacity-0'}
+        ${isExpanded ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}
       `}>
         <div className="px-4 pb-4 pt-2 border-t border-gray-100">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {stats.map(obj => (
               <div
                 key={obj.key}
@@ -510,34 +630,71 @@ const ObjectivesBar = ({ objectives, isExpanded, onToggle }) => {
                     : 'bg-white border-gray-200 hover:border-gray-300'}
                 `}
               >
+                {/* Header with label and completion status */}
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-1.5">
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 bg-gradient-to-br ${getColorClasses(obj.color).gradient}`} />
+                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 bg-gradient-to-br ${getColorClasses(obj.color).gradient}`} />
                     <span className="text-xs font-semibold text-gray-700">{obj.label}</span>
                   </div>
-                  {obj.isComplete && (
-                    <CheckCircleIcon className="w-4 h-4 text-emerald-500" />
-                  )}
+                  <div className="flex items-center gap-1">
+                    {obj.isComplete && (
+                      <CheckCircleIcon className="w-4 h-4 text-emerald-500" />
+                    )}
+                    <span className={`text-xs font-medium ${obj.isComplete ? 'text-emerald-600' : 'text-gray-500'}`}>
+                      {Math.round(obj.progress)}%
+                    </span>
+                  </div>
                 </div>
 
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className={`text-lg font-bold font-mono ${obj.isComplete ? 'text-emerald-600' : 'text-gray-800'}`}>
-                    {formatTime(obj.credited)}
-                  </span>
-                  <span className="text-xs text-gray-400">/</span>
-                  <span className="text-xs text-gray-500 font-mono">{formatTime(obj.required)}</span>
-                </div>
-
-                <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all ${getColorClasses(obj.color).progress}`}
-                    style={{ width: `${obj.progress}%` }}
+                {/* Segmented Progress Bar */}
+                <div className="mb-3">
+                  <SegmentedProgressBar
+                    planned={obj.planned}
+                    executed={obj.executed}
+                    credited={obj.credited}
+                    extended={obj.extended}
+                    compact
                   />
                 </div>
 
-                <span className="absolute top-2 right-2 text-xs text-gray-400">
-                  {Math.round(obj.progress)}%
-                </span>
+                {/* Time Metrics Grid - 5 metrics in 2 rows */}
+                <div className="grid grid-cols-5 gap-1 text-center">
+                  {/* Planned */}
+                  <div className="flex flex-col">
+                    <span className="text-[8px] font-medium text-slate-500 uppercase tracking-wider">Plan</span>
+                    <span className="text-[10px] font-mono font-semibold text-slate-700">{formatTime(obj.planned)}</span>
+                  </div>
+                  {/* Executed */}
+                  <div className="flex flex-col">
+                    <span className="text-[8px] font-medium text-blue-500 uppercase tracking-wider">Exec</span>
+                    <span className="text-[10px] font-mono font-semibold text-blue-600">{formatTime(obj.executed)}</span>
+                  </div>
+                  {/* Credited */}
+                  <div className="flex flex-col">
+                    <span className="text-[8px] font-medium text-emerald-500 uppercase tracking-wider">Cred</span>
+                    <span className={`text-[10px] font-mono font-semibold ${obj.credited > 0 ? 'text-emerald-600' : 'text-gray-400'}`}>
+                      {obj.credited > 0 ? formatTime(obj.credited) : '—'}
+                    </span>
+                  </div>
+                  {/* Extended */}
+                  <div className="flex flex-col">
+                    <span className="text-[8px] font-medium text-amber-500 uppercase tracking-wider">Ext</span>
+                    <span className={`text-[10px] font-mono font-semibold ${obj.extended > 0 ? 'text-amber-600' : 'text-gray-400'}`}>
+                      {obj.extended > 0 ? formatTime(obj.extended) : '—'}
+                    </span>
+                  </div>
+                  {/* Total */}
+                  <div className="flex flex-col">
+                    <span className="text-[8px] font-medium text-purple-500 uppercase tracking-wider">Total</span>
+                    <span className="text-[10px] font-mono font-semibold text-purple-600">{formatTime(obj.total)}</span>
+                  </div>
+                </div>
+
+                {/* Required indicator */}
+                <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between">
+                  <span className="text-[9px] text-gray-500">Required</span>
+                  <span className="text-[10px] font-mono font-semibold text-gray-700">{formatTime(obj.required)}</span>
+                </div>
               </div>
             ))}
           </div>
