@@ -10,12 +10,14 @@ import CreditTransferViewDark from '@components/CreditTransferViewDark';
 import CreditTransferViewLight from '@components/CreditTransferViewLight';
 import CreditTransferViewSimple from '@components/CreditTransferViewSimple';
 import TrainingFootprintView from '@components/TrainingFootprintView';
+import TrainingFootprintViewV2 from '@components/TrainingFootprintViewV2';
 import Toast from '@components/Toast';
 
 const App = () => {
   const [activeDesign, setActiveDesign] = useState('split'); // 'standard', 'compact', or 'split'
   const [activeCreateDesign, setActiveCreateDesign] = useState('inline'); // 'inline' or 'split'
   const [activeCreditDesign, setActiveCreditDesign] = useState('simple'); // 'simple', 'drawer', 'dark', or 'light'
+  const [activeFootprintDesign, setActiveFootprintDesign] = useState('v2'); // 'v1' or 'v2'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreditTransferOpen, setIsCreditTransferOpen] = useState(false);
@@ -620,66 +622,64 @@ const App = () => {
           <p className="text-sm text-gray-500 mb-6">Modern redesign of the training report footprint with grouped events and time tracking</p>
         </div>
 
-        {/* Footprint - Design Overview */}
+        {/* Footprint - Design Variants */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Design Improvements</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Footprint Design Variants</h2>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Before */}
-            <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-              <h3 className="font-medium text-red-800 mb-3 flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                Before: Flat Table View
-              </h3>
-              <ul className="space-y-2 text-sm text-red-700">
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">!</span>
-                  <span>Repeated events shown as separate rows</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">!</span>
-                  <span>Objectives overview takes too much space</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">!</span>
-                  <span>No clear indication of extended time</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-xs">!</span>
-                  <span>Hard to see which events were repeated due to failures</span>
-                </li>
-              </ul>
-            </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* V1 - Original */}
+            <button
+              onClick={() => setActiveFootprintDesign('v1')}
+              className={`p-4 rounded-lg border-2 text-left transition-all ${
+                activeFootprintDesign === 'v1'
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  activeFootprintDesign === 'v1' ? 'border-blue-500' : 'border-gray-300'
+                }`}>
+                  {activeFootprintDesign === 'v1' && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                </div>
+                <h3 className="font-semibold text-gray-900">Original (V1)</h3>
+              </div>
+              <p className="text-sm text-gray-600 ml-6">
+                Multi-color segmented progress bars with separate objectives overview. Detailed time tracking with executed, credited, and extended columns.
+              </p>
+              <div className="ml-6 mt-2 flex flex-wrap gap-1">
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Multi-color bars</span>
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Detailed stats</span>
+              </div>
+            </button>
 
-            {/* After */}
-            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-              <h3 className="font-medium text-green-800 mb-3 flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                After: Grouped Modern View
-              </h3>
-              <ul className="space-y-2 text-sm text-green-700">
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
-                  <span><strong>Grouped events</strong> - Same event consolidated with expand</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
-                  <span><strong>Collapsible objectives</strong> - Space-efficient overview bar</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
-                  <span><strong>Clear time tracking</strong> - Planned, Credited, Extended</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded text-xs">✓</span>
-                  <span><strong>Repeat indicators</strong> - Badge shows repeat count</span>
-                </li>
-              </ul>
-            </div>
+            {/* V2 - Objective-Focused */}
+            <button
+              onClick={() => setActiveFootprintDesign('v2')}
+              className={`p-4 rounded-lg border-2 text-left transition-all ${
+                activeFootprintDesign === 'v2'
+                  ? 'border-emerald-500 bg-emerald-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  activeFootprintDesign === 'v2' ? 'border-emerald-500' : 'border-gray-300'
+                }`}>
+                  {activeFootprintDesign === 'v2' && <div className="w-2 h-2 rounded-full bg-emerald-500" />}
+                </div>
+                <h3 className="font-semibold text-gray-900">Objective-Focused (V2)</h3>
+                <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded font-medium">New</span>
+              </div>
+              <p className="text-sm text-gray-600 ml-6">
+                Blue gradient progress (green when complete). Merged overview. "Repeated" label, gray/icon for credited. Focus on Flight Time & Solo Time targets.
+              </p>
+              <div className="ml-6 mt-2 flex flex-wrap gap-1">
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-600 text-xs rounded">Blue/Green theme</span>
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-600 text-xs rounded">Objective targets</span>
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-600 text-xs rounded">Aligned columns</span>
+              </div>
+            </button>
           </div>
         </div>
 
@@ -687,7 +687,7 @@ const App = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">Training Footprint Demo</h2>
           <p className="text-sm text-gray-500 mb-4">
-            Click the button below to see the modern Training Footprint View in action.
+            Click the button below to see the <strong>{activeFootprintDesign === 'v1' ? 'Original (V1)' : 'Objective-Focused (V2)'}</strong> Training Footprint View.
           </p>
 
           <button
@@ -703,17 +703,31 @@ const App = () => {
           {/* Instructions */}
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
             <h3 className="font-medium text-gray-800 text-sm mb-2">Key features to explore:</h3>
-            <ul className="text-sm text-gray-600 space-y-1">
-              <li>• <strong>Collapsible Objectives Bar</strong> - Click to expand/collapse the objectives overview</li>
-              <li>• <strong>Progress Mini-bars</strong> - Quick visual progress when objectives are collapsed</li>
-              <li>• <strong>Grouped Training Events</strong> - Repeated events consolidated into one row</li>
-              <li>• <strong>Repeat Badge</strong> - Shows "2x", "3x" etc. when event was repeated</li>
-              <li>• <strong>Time Columns</strong> - Planned (original), Credited (passed), Extended (extra due to repeats)</li>
-              <li>• <strong>Expandable Bookings</strong> - Click any event row to see individual bookings</li>
-              <li>• <strong>Grade Indicators</strong> - Color-coded grades (green = pass, red = fail)</li>
-              <li>• <strong>Section Summaries</strong> - Total times at section level</li>
-              <li>• <strong>Overall Progress Card</strong> - Summary stats with circular progress</li>
-            </ul>
+            {activeFootprintDesign === 'v1' ? (
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• <strong>Collapsible Objectives Bar</strong> - Click to expand/collapse the objectives overview</li>
+                <li>• <strong>Progress Mini-bars</strong> - Quick visual progress when objectives are collapsed</li>
+                <li>• <strong>Grouped Training Events</strong> - Repeated events consolidated into one row</li>
+                <li>• <strong>Repeat Badge</strong> - Shows "2x", "3x" etc. when event was repeated</li>
+                <li>• <strong>Time Columns</strong> - Planned (original), Credited (passed), Extended (extra due to repeats)</li>
+                <li>• <strong>Expandable Bookings</strong> - Click any event row to see individual bookings</li>
+                <li>• <strong>Grade Indicators</strong> - Color-coded grades (green = pass, red = fail)</li>
+                <li>• <strong>Section Summaries</strong> - Total times at section level</li>
+                <li>• <strong>Overall Progress Card</strong> - Summary stats with circular progress</li>
+              </ul>
+            ) : (
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• <strong>Merged Overview</strong> - Objectives + Progress combined in one expandable section</li>
+                <li>• <strong>Blue/Green Theme</strong> - Blue gradient for progress, turns green when target reached</li>
+                <li>• <strong>Objective Targets</strong> - Flight Time & Solo Time shown with targets at section and event level</li>
+                <li>• <strong>Credited as Gray/Icon</strong> - Credits shown as subtle gray badge with CR icon</li>
+                <li>• <strong>"Repeated" Label</strong> - Clear text label instead of "2x" for repeated sessions</li>
+                <li>• <strong>Simplified Bookings</strong> - No status column, cleaner layout with aligned columns</li>
+                <li>• <strong>Aligned Table Columns</strong> - Consistent column widths across sections</li>
+                <li>• <strong>Progress Chips</strong> - Compact objective metrics showing current/target</li>
+                <li>• <strong>Section-Level Objectives</strong> - Each section shows its own Flight/Solo targets</li>
+              </ul>
+            )}
           </div>
         </div>
       </div>
@@ -820,10 +834,17 @@ const App = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <TrainingFootprintView
-              studentName="Dalda Malda"
-              programCode="TC 1"
-            />
+            {activeFootprintDesign === 'v1' ? (
+              <TrainingFootprintView
+                studentName="Dalda Malda"
+                programCode="TC 1"
+              />
+            ) : (
+              <TrainingFootprintViewV2
+                studentName="Dalda Malda"
+                programCode="TC 1"
+              />
+            )}
           </div>
         </div>
       )}
