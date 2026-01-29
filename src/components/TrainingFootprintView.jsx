@@ -856,12 +856,6 @@ const GroupedEventRow = ({ event, isExpanded, onToggle }) => {
                 Credit
               </span>
             )}
-            {stats.isCompleted && (
-              <span className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-medium rounded">
-                <CheckCircleIcon className="w-3 h-3" />
-                Completed
-              </span>
-            )}
           </div>
           <p className="text-xs text-gray-500 truncate">{event.name}</p>
         </div>
