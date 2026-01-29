@@ -198,6 +198,12 @@ const EditIcon = ({ className = "w-4 h-4" }) => (
   </svg>
 );
 
+const GradingIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+  </svg>
+);
+
 // ============================================================================
 // COMPACT OBJECTIVES BAR
 // ============================================================================
@@ -379,8 +385,8 @@ const BookingRow = ({ booking, isLast }) => {
         <button className="p-1 hover:bg-gray-200 rounded transition-colors" title="View Details">
           <EyeIcon className="w-4 h-4 text-gray-400" />
         </button>
-        <button className="p-1 hover:bg-gray-200 rounded transition-colors" title="Edit Booking">
-          <EditIcon className="w-4 h-4 text-gray-400" />
+        <button className="p-1 hover:bg-gray-200 rounded transition-colors" title="Perform Grading">
+          <GradingIcon className="w-4 h-4 text-gray-400" />
         </button>
       </div>
     </div>
@@ -522,15 +528,6 @@ const GroupedEventRow = ({ event, isExpanded, onToggle }) => {
           <div className="text-[10px] text-gray-400">bookings</div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-1">
-          <button className="p-1.5 hover:bg-gray-200 rounded transition-colors" title="View Event">
-            <EyeIcon className="w-4 h-4 text-gray-400" />
-          </button>
-          <button className="p-1.5 hover:bg-gray-200 rounded transition-colors" title="Add Grading">
-            <EditIcon className="w-4 h-4 text-gray-400" />
-          </button>
-        </div>
       </div>
 
       {/* Expanded Bookings */}
@@ -676,7 +673,6 @@ const TrainingSection = ({ section, expandedEvents, onToggleEvent }) => {
             <div className="w-8 text-center">Grade</div>
             <div className="w-24 text-center">Status</div>
             <div className="w-[50px] text-center">Bookings</div>
-            <div className="w-16">Actions</div>
           </div>
 
           {/* Event Rows */}
@@ -690,26 +686,6 @@ const TrainingSection = ({ section, expandedEvents, onToggleEvent }) => {
           ))}
         </div>
 
-        {/* Section Summary */}
-        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-200">
-          <span className="text-xs font-semibold text-gray-600">Section Total</span>
-          <div className="flex items-center gap-6 text-xs">
-            <div>
-              <span className="text-gray-500">Planned: </span>
-              <span className="font-bold text-gray-700">{formatTimeShort(stats.totalPlanned)}</span>
-            </div>
-            <div>
-              <span className="text-gray-500">Credited: </span>
-              <span className="font-bold text-emerald-600">{formatTimeShort(stats.totalCredited)}</span>
-            </div>
-            <div>
-              <span className="text-gray-500">Extended: </span>
-              <span className={`font-bold ${stats.totalExtended > 0 ? 'text-amber-600' : 'text-gray-400'}`}>
-                {stats.totalExtended > 0 ? `+${formatTimeShort(stats.totalExtended)}` : '—'}
-              </span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
