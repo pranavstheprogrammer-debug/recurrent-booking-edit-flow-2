@@ -44,9 +44,11 @@ const INITIAL_SECTIONS = [
   {
     id: 'vfr-basic',
     name: 'VFR Basic Training',
-    creditedTime: 60,
+    creditedTime: 30, // Only VCON02 has 30 min credited
     objectives: {
-      flightTime: { target: 360, executed: 200, credited: 60 },
+      // Total: VCON01 (115) + VCON02 (85) + VCON03 (118+110=228) = 428 executed
+      // Credited: Only VCON02 has 30 credited
+      flightTime: { target: 360, executed: 428, credited: 30 },
       soloTime: { target: 0, executed: 0, credited: 0 },
     },
     events: [
@@ -153,8 +155,10 @@ const INITIAL_SECTIONS = [
   {
     id: 'ifr-training',
     name: 'IFR Instrument Training',
-    creditedTime: 45,
+    creditedTime: 30, // Only IFR01 has 30 min credited
     objectives: {
+      // Total: IFR01 (58) + IFR02 (110) + IFR03 (115) + IFR04 (0) = 283 executed
+      // Credited: Only IFR01 has 30 credited
       flightTime: { target: 420, executed: 283, credited: 30 },
       soloTime: { target: 0, executed: 0, credited: 0 },
     },
