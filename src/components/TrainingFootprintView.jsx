@@ -7,8 +7,16 @@ import React, { useState, useMemo, useCallback } from 'react';
  * - Compact collapsible objectives overview with progress bars
  * - Grouped training events (repeated events consolidated)
  * - Expandable booking details for each event
- * - Section-level summaries with credited/extended time
- * - Clear indication of planned, credited, and extended time
+ * - Section-level summaries with executed/credited/extended time
+ * - Multi-color segmented progress bar with legends
+ * - Time display in HH:mm format
+ *
+ * Stats Definitions:
+ * - Planned: Target time for an event/section
+ * - Executed: Actual time spent on training
+ * - Credited: Time credited for prior experience (student competency)
+ * - Extended: Additional time over planned target (repeats/reattempts)
+ * - Total: Executed + Credited + Extended
  */
 
 // ============================================================================
@@ -26,7 +34,7 @@ const OBJECTIVE_TYPES = [
   { key: 'ifrDual', label: 'IFR Dual', shortLabel: 'IFR-D', color: 'amber', icon: '🌙' },
 ];
 
-// Sample data matching the screenshot
+// Sample data matching the screenshot - objectives with credited and required hours
 const INITIAL_OBJECTIVES = {
   flightTime: { credited: 240, required: 1800, unit: 'h' },
   dualTime: { credited: 240, required: 1800, unit: 'h' },
@@ -38,19 +46,21 @@ const INITIAL_OBJECTIVES = {
   ifrDual: { credited: 0, required: 1800, unit: 'h' },
 };
 
-// Training events with bookings - simulating the screenshot data
+// Training events with bookings - each booking now has executedTime
 const INITIAL_SECTIONS = [
   {
     id: 'default',
     name: 'Default Section',
+    creditedTime: 60, // 1 hour credited to section for prior experience
     events: [
       {
         id: 'vcon01',
         eventCode: 'ATPA_6_VCON01',
         name: 'VCON 01 - Basic Visual Circuits',
         plannedTime: 120, // 2 hours planned
+        creditedTime: 0, // No prior credit for this event
         bookings: [
-          { id: 'b1', date: '28/01/2026', status: 'Executed', grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'done. All good.', instructor: 'F-PSI' },
+          { id: 'b1', date: '28/01/2026', status: 'Executed', executedTime: 115, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'done. All good.', instructor: 'F-PSI' },
         ]
       },
       {
@@ -58,8 +68,9 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_6_VCON02',
         name: 'VCON 02 - Advanced Circuits',
         plannedTime: 120,
+        creditedTime: 30, // 30 min credited for prior experience
         bookings: [
-          { id: 'b2', date: '28/01/2026', status: 'Executed', grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: '', instructor: 'F-PSI' },
+          { id: 'b2', date: '28/01/2026', status: 'Executed', executedTime: 90, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: '', instructor: 'F-PSI' },
         ]
       },
       {
@@ -67,9 +78,10 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_6_VCON03',
         name: 'VCON 03 - Circuit Emergencies',
         plannedTime: 120,
+        creditedTime: 0,
         bookings: [
-          { id: 'b3', date: '28/01/2026', status: 'Executed', grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Needs improvement', instructor: 'F-PSI' },
-          { id: 'b4', date: '28/01/2026', status: 'Executed', grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Passed on retry', instructor: 'F-PSI' },
+          { id: 'b3', date: '27/01/2026', status: 'Executed', executedTime: 120, grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Needs improvement', instructor: 'F-PSI' },
+          { id: 'b4', date: '28/01/2026', status: 'Executed', executedTime: 110, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Passed on retry', instructor: 'F-PSI' },
         ]
       },
       {
@@ -77,10 +89,11 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_6_VCON04',
         name: 'VCON 04 - Cross-wind Operations',
         plannedTime: 120,
+        creditedTime: 0,
         bookings: [
-          { id: 'b5', date: '28/01/2026', status: 'Executed', grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Failed - needs practice', instructor: 'F-PSI' },
-          { id: 'b6', date: '28/01/2026', status: 'Executed', grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Still struggling', instructor: 'F-PSI' },
-          { id: 'b7', date: '28/01/2026', status: 'Executed', grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Finally passed!', instructor: 'F-PSI' },
+          { id: 'b5', date: '25/01/2026', status: 'Executed', executedTime: 120, grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Failed - needs practice', instructor: 'F-PSI' },
+          { id: 'b6', date: '26/01/2026', status: 'Executed', executedTime: 115, grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Still struggling', instructor: 'F-PSI' },
+          { id: 'b7', date: '28/01/2026', status: 'Executed', executedTime: 125, grade: 5, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: 'Finally passed!', instructor: 'F-PSI' },
         ]
       },
       {
@@ -88,8 +101,9 @@ const INITIAL_SECTIONS = [
         eventCode: 'ATPA_6_VCON05',
         name: 'VCON 05 - Night Circuits',
         plannedTime: 120,
+        creditedTime: 0,
         bookings: [
-          { id: 'b8', date: '28/01/2026', status: 'Executed', grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: '', instructor: 'F-PSI' },
+          { id: 'b8', date: '28/01/2026', status: 'Executed', executedTime: 118, grade: 1, soloTime: null, vfrSolo: null, approvalStatus: 'Student Review', remarks: '', instructor: 'F-PSI' },
         ]
       },
     ]
@@ -97,23 +111,66 @@ const INITIAL_SECTIONS = [
 ];
 
 // ============================================================================
+// STAT COLORS - Semantic color system for time tracking
+// ============================================================================
+
+const STAT_COLORS = {
+  planned: {
+    bg: 'bg-slate-100',
+    text: 'text-slate-600',
+    border: 'border-slate-200',
+    bar: 'bg-slate-300',
+    light: 'bg-slate-50',
+  },
+  executed: {
+    bg: 'bg-blue-100',
+    text: 'text-blue-600',
+    border: 'border-blue-200',
+    bar: 'bg-blue-500',
+    light: 'bg-blue-50',
+  },
+  credited: {
+    bg: 'bg-emerald-100',
+    text: 'text-emerald-600',
+    border: 'border-emerald-200',
+    bar: 'bg-emerald-500',
+    light: 'bg-emerald-50',
+  },
+  extended: {
+    bg: 'bg-amber-100',
+    text: 'text-amber-600',
+    border: 'border-amber-200',
+    bar: 'bg-amber-500',
+    light: 'bg-amber-50',
+  },
+  total: {
+    bg: 'bg-purple-100',
+    text: 'text-purple-600',
+    border: 'border-purple-200',
+    bar: 'bg-purple-500',
+    light: 'bg-purple-50',
+  },
+};
+
+// ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
 
+// Format time in HH:mm format
 const formatTime = (minutes) => {
-  if (minutes === null || minutes === undefined || minutes === 0) return '0 h';
+  if (minutes === null || minutes === undefined || minutes === 0) return '00:00';
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  if (m === 0) return `${h}.0 h`;
-  return `${h}:${m.toString().padStart(2, '0')} h`;
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 };
 
-const formatTimeShort = (minutes) => {
+// Format time with "h" suffix for compact display
+const formatTimeCompact = (minutes) => {
   if (minutes === null || minutes === undefined || minutes === 0) return '0h';
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   if (m === 0) return `${h}h`;
-  return `${h}h${m}m`;
+  return `${h}h ${m}m`;
 };
 
 const getProgressColor = (percent) => {
@@ -209,17 +266,155 @@ const EyeIcon = ({ className = "w-4 h-4" }) => (
   </svg>
 );
 
-const EditIcon = ({ className = "w-4 h-4" }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-  </svg>
-);
-
 const GradingIcon = ({ className = "w-4 h-4" }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
   </svg>
 );
+
+const PlayIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const CreditIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+  </svg>
+);
+
+const PlusCircleIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+// ============================================================================
+// MULTI-SEGMENT PROGRESS BAR COMPONENT
+// ============================================================================
+
+const SegmentedProgressBar = ({
+  planned,
+  executed,
+  credited,
+  extended,
+  showLegend = false,
+  compact = false,
+  className = ""
+}) => {
+  const total = executed + credited + extended;
+  const maxValue = Math.max(planned, total);
+
+  // Calculate percentages relative to max
+  const executedPercent = maxValue > 0 ? (executed / maxValue) * 100 : 0;
+  const creditedPercent = maxValue > 0 ? (credited / maxValue) * 100 : 0;
+  const extendedPercent = maxValue > 0 ? (extended / maxValue) * 100 : 0;
+  const plannedPercent = maxValue > 0 ? (planned / maxValue) * 100 : 0;
+
+  // Calculate fill vs planned ratio
+  const completionPercent = planned > 0 ? Math.round((total / planned) * 100) : 0;
+
+  return (
+    <div className={`${className}`}>
+      {/* Progress Bar Container */}
+      <div className={`relative w-full ${compact ? 'h-2' : 'h-3'} bg-slate-100 rounded-full overflow-hidden`}>
+        {/* Planned indicator line (if total < planned) */}
+        {total < planned && (
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-slate-400 z-10"
+            style={{ left: `${plannedPercent}%` }}
+          />
+        )}
+
+        {/* Stacked segments */}
+        <div className="absolute inset-0 flex">
+          {/* Executed segment */}
+          {executed > 0 && (
+            <div
+              className={`${STAT_COLORS.executed.bar} h-full transition-all duration-300`}
+              style={{ width: `${executedPercent}%` }}
+              title={`Executed: ${formatTime(executed)}`}
+            />
+          )}
+
+          {/* Credited segment */}
+          {credited > 0 && (
+            <div
+              className={`${STAT_COLORS.credited.bar} h-full transition-all duration-300`}
+              style={{ width: `${creditedPercent}%` }}
+              title={`Credited: ${formatTime(credited)}`}
+            />
+          )}
+
+          {/* Extended segment */}
+          {extended > 0 && (
+            <div
+              className={`${STAT_COLORS.extended.bar} h-full transition-all duration-300`}
+              style={{ width: `${extendedPercent}%` }}
+              title={`Extended: ${formatTime(extended)}`}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Legend */}
+      {showLegend && (
+        <div className="flex flex-wrap items-center gap-3 mt-2 text-xs">
+          <div className="flex items-center gap-1.5">
+            <div className={`w-2.5 h-2.5 rounded-sm ${STAT_COLORS.executed.bar}`} />
+            <span className="text-gray-600">Executed</span>
+            <span className={`font-mono font-medium ${STAT_COLORS.executed.text}`}>{formatTime(executed)}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className={`w-2.5 h-2.5 rounded-sm ${STAT_COLORS.credited.bar}`} />
+            <span className="text-gray-600">Credited</span>
+            <span className={`font-mono font-medium ${STAT_COLORS.credited.text}`}>{formatTime(credited)}</span>
+          </div>
+          {extended > 0 && (
+            <div className="flex items-center gap-1.5">
+              <div className={`w-2.5 h-2.5 rounded-sm ${STAT_COLORS.extended.bar}`} />
+              <span className="text-gray-600">Extended</span>
+              <span className={`font-mono font-medium ${STAT_COLORS.extended.text}`}>+{formatTime(extended)}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1.5 ml-auto">
+            <span className="text-gray-500">vs Planned</span>
+            <span className={`font-semibold ${
+              completionPercent >= 100 ? 'text-emerald-600' :
+              completionPercent >= 50 ? 'text-blue-600' : 'text-amber-600'
+            }`}>
+              {completionPercent}%
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================================
+// STAT CHIP COMPONENT - Compact time display
+// ============================================================================
+
+const StatChip = ({ label, value, type = 'default', showPlus = false, compact = false }) => {
+  const colors = STAT_COLORS[type] || STAT_COLORS.planned;
+
+  return (
+    <div className={`
+      flex items-center gap-1.5 px-2 py-1 rounded-md
+      ${colors.light} ${colors.border} border
+    `}>
+      <span className={`text-[10px] font-medium ${colors.text} uppercase tracking-wide`}>
+        {label}
+      </span>
+      <span className={`font-mono font-semibold ${colors.text} ${compact ? 'text-xs' : 'text-sm'}`}>
+        {showPlus && value !== '00:00' ? '+' : ''}{value}
+      </span>
+    </div>
+  );
+};
 
 // ============================================================================
 // COMPACT OBJECTIVES BAR
@@ -326,11 +521,11 @@ const ObjectivesBar = ({ objectives, isExpanded, onToggle }) => {
                 </div>
 
                 <div className="flex items-baseline gap-1 mb-2">
-                  <span className={`text-lg font-bold ${obj.isComplete ? 'text-emerald-600' : 'text-gray-800'}`}>
-                    {formatTimeShort(obj.credited)}
+                  <span className={`text-lg font-bold font-mono ${obj.isComplete ? 'text-emerald-600' : 'text-gray-800'}`}>
+                    {formatTime(obj.credited)}
                   </span>
                   <span className="text-xs text-gray-400">/</span>
-                  <span className="text-xs text-gray-500">{formatTimeShort(obj.required)}</span>
+                  <span className="text-xs text-gray-500 font-mono">{formatTime(obj.required)}</span>
                 </div>
 
                 <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -375,6 +570,14 @@ const BookingRow = ({ booking, isLast }) => {
       `}>
         {booking.status}
       </span>
+
+      {/* Executed Time for this booking */}
+      <div className="flex items-center gap-1 min-w-[70px]">
+        <ClockIcon className="w-3 h-3 text-blue-400" />
+        <span className="text-xs font-mono text-blue-600 font-medium">
+          {formatTime(booking.executedTime || 0)}
+        </span>
+      </div>
 
       <div className="flex-1" />
 
@@ -427,9 +630,20 @@ const GroupedEventRow = ({ event, isExpanded, onToggle }) => {
 
     // Calculate times
     const plannedTime = event.plannedTime || 120; // Default 2 hours
-    const actualTime = totalBookings * plannedTime; // Each booking is the planned duration
-    const extendedTime = Math.max(0, actualTime - plannedTime); // Time over the original plan
-    const creditedTime = passedBookings > 0 ? plannedTime : 0; // Only credited if passed
+    const creditedTime = event.creditedTime || 0; // Prior experience credit
+
+    // Sum of all executed time from bookings
+    const executedTime = bookings.reduce((sum, b) => sum + (b.executedTime || 0), 0);
+
+    // Extended time is the amount over (planned - credited) if completed
+    // Only count as extended if they've actually done more work than required
+    const requiredTime = Math.max(0, plannedTime - creditedTime);
+    const extendedTime = passedBookings > 0 ? Math.max(0, executedTime - requiredTime) : 0;
+
+    // Total = Executed + Credited + Extended (but extended is part of executed in repeats)
+    // Actually: Total is the sum towards completion = Executed + Credited
+    // Extended is just time spent beyond planned
+    const totalTime = executedTime + creditedTime;
 
     return {
       totalBookings,
@@ -438,12 +652,13 @@ const GroupedEventRow = ({ event, isExpanded, onToggle }) => {
       failedBookings,
       latestGrade,
       plannedTime,
-      actualTime,
-      extendedTime,
+      executedTime,
       creditedTime,
+      extendedTime,
+      totalTime,
       hasRepeats: totalBookings > 1,
       isCompleted: passedBookings > 0,
-      hasFailed: failedBookings > 0,
+      hasFailed: failedBookings > 0 && passedBookings === 0,
     };
   }, [event]);
 
@@ -478,6 +693,12 @@ const GroupedEventRow = ({ event, isExpanded, onToggle }) => {
                 {stats.totalBookings}x
               </span>
             )}
+            {stats.creditedTime > 0 && (
+              <span className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-medium rounded">
+                <CreditIcon className="w-3 h-3" />
+                Credit
+              </span>
+            )}
             {stats.isCompleted && (
               <span className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-medium rounded">
                 <CheckCircleIcon className="w-3 h-3" />
@@ -488,35 +709,27 @@ const GroupedEventRow = ({ event, isExpanded, onToggle }) => {
           <p className="text-xs text-gray-500 truncate">{event.name}</p>
         </div>
 
-        {/* Time Stats */}
-        <div className="hidden md:flex items-center gap-4">
-          {/* Planned Time */}
-          <div className="text-center min-w-[70px]">
-            <div className="text-[10px] text-gray-400 uppercase tracking-wide">Planned</div>
-            <div className="text-sm font-semibold text-gray-700 font-mono">
-              {formatTimeShort(stats.plannedTime)}
-            </div>
-          </div>
+        {/* Time Stats - Desktop */}
+        <div className="hidden lg:flex items-center gap-2">
+          <StatChip label="Plan" value={formatTime(stats.plannedTime)} type="planned" compact />
+          <StatChip label="Exec" value={formatTime(stats.executedTime)} type="executed" compact />
+          {stats.creditedTime > 0 && (
+            <StatChip label="Cred" value={formatTime(stats.creditedTime)} type="credited" compact />
+          )}
+          {stats.extendedTime > 0 && (
+            <StatChip label="Ext" value={formatTime(stats.extendedTime)} type="extended" showPlus compact />
+          )}
+        </div>
 
-          {/* Credited Time */}
-          <div className="text-center min-w-[70px]">
-            <div className="text-[10px] text-gray-400 uppercase tracking-wide">Credited</div>
-            <div className={`text-sm font-semibold font-mono ${
-              stats.creditedTime > 0 ? 'text-emerald-600' : 'text-gray-400'
-            }`}>
-              {formatTimeShort(stats.creditedTime)}
-            </div>
-          </div>
-
-          {/* Extended Time */}
-          <div className="text-center min-w-[70px]">
-            <div className="text-[10px] text-gray-400 uppercase tracking-wide">Extended</div>
-            <div className={`text-sm font-semibold font-mono ${
-              stats.extendedTime > 0 ? 'text-amber-600' : 'text-gray-400'
-            }`}>
-              {stats.extendedTime > 0 ? `+${formatTimeShort(stats.extendedTime)}` : '—'}
-            </div>
-          </div>
+        {/* Mini Progress Bar - Tablet */}
+        <div className="hidden md:block lg:hidden w-32">
+          <SegmentedProgressBar
+            planned={stats.plannedTime}
+            executed={stats.executedTime}
+            credited={stats.creditedTime}
+            extended={stats.extendedTime}
+            compact
+          />
         </div>
 
         {/* Latest Grade */}
@@ -536,7 +749,7 @@ const GroupedEventRow = ({ event, isExpanded, onToggle }) => {
             ? 'bg-emerald-100 text-emerald-700'
             : 'bg-blue-100 text-blue-700'}
         `}>
-          {stats.isCompleted ? 'Completed' : 'Student Review'}
+          {stats.isCompleted ? 'Completed' : 'In Progress'}
         </span>
 
         {/* Booking Count */}
@@ -552,27 +765,27 @@ const GroupedEventRow = ({ event, isExpanded, onToggle }) => {
       {/* Expanded Bookings */}
       <div className={`
         transition-all duration-300 ease-in-out overflow-hidden
-        ${isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}
+        ${isExpanded ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}
       `}>
         <div className="border-t border-gray-100">
-          {/* Mobile Time Stats */}
-          <div className="md:hidden flex items-center justify-around py-2 bg-gray-50 border-b border-gray-100">
-            <div className="text-center">
-              <div className="text-[10px] text-gray-400">Planned</div>
-              <div className="text-sm font-semibold text-gray-700">{formatTimeShort(stats.plannedTime)}</div>
+          {/* Mobile/Tablet Time Stats Summary */}
+          <div className="lg:hidden px-4 py-3 bg-gradient-to-r from-slate-50 to-white border-b border-gray-100">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <StatChip label="Planned" value={formatTime(stats.plannedTime)} type="planned" />
+              <StatChip label="Executed" value={formatTime(stats.executedTime)} type="executed" />
+              {stats.creditedTime > 0 && (
+                <StatChip label="Credited" value={formatTime(stats.creditedTime)} type="credited" />
+              )}
+              {stats.extendedTime > 0 && (
+                <StatChip label="Extended" value={formatTime(stats.extendedTime)} type="extended" showPlus />
+              )}
             </div>
-            <div className="text-center">
-              <div className="text-[10px] text-gray-400">Credited</div>
-              <div className={`text-sm font-semibold ${stats.creditedTime > 0 ? 'text-emerald-600' : 'text-gray-400'}`}>
-                {formatTimeShort(stats.creditedTime)}
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-[10px] text-gray-400">Extended</div>
-              <div className={`text-sm font-semibold ${stats.extendedTime > 0 ? 'text-amber-600' : 'text-gray-400'}`}>
-                {stats.extendedTime > 0 ? `+${formatTimeShort(stats.extendedTime)}` : '—'}
-              </div>
-            </div>
+            <SegmentedProgressBar
+              planned={stats.plannedTime}
+              executed={stats.executedTime}
+              credited={stats.creditedTime}
+              extended={stats.extendedTime}
+            />
           </div>
 
           {/* Booking Header */}
@@ -580,6 +793,7 @@ const GroupedEventRow = ({ event, isExpanded, onToggle }) => {
             <div className="w-8" />
             <div className="min-w-[100px]">Date</div>
             <div>Status</div>
+            <div className="min-w-[70px]">Time</div>
             <div className="flex-1" />
             <div className="w-6 text-center">Grade</div>
             <div>Approval</div>
@@ -611,30 +825,39 @@ const TrainingSection = ({ section, expandedEvents, onToggleEvent }) => {
   const stats = useMemo(() => {
     const events = section.events || [];
     let totalPlanned = 0;
-    let totalCredited = 0;
+    let totalExecuted = 0;
+    let totalCredited = section.creditedTime || 0; // Section-level credit
     let totalExtended = 0;
     let completedEvents = 0;
 
     events.forEach(event => {
       const bookings = event.bookings || [];
       const plannedTime = event.plannedTime || 120;
+      const creditedTime = event.creditedTime || 0;
       const passedBookings = bookings.filter(b => b.grade >= 4).length;
-      const actualTime = bookings.length * plannedTime;
+      const executedTime = bookings.reduce((sum, b) => sum + (b.executedTime || 0), 0);
+      const requiredTime = Math.max(0, plannedTime - creditedTime);
 
       totalPlanned += plannedTime;
+      totalExecuted += executedTime;
+      totalCredited += creditedTime;
+
       if (passedBookings > 0) {
-        totalCredited += plannedTime;
         completedEvents++;
+        totalExtended += Math.max(0, executedTime - requiredTime);
       }
-      totalExtended += Math.max(0, actualTime - plannedTime);
     });
+
+    const totalTime = totalExecuted + totalCredited;
 
     return {
       totalEvents: events.length,
       completedEvents,
       totalPlanned,
+      totalExecuted,
       totalCredited,
       totalExtended,
+      totalTime,
     };
   }, [section]);
 
@@ -643,33 +866,65 @@ const TrainingSection = ({ section, expandedEvents, onToggleEvent }) => {
       {/* Section Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-gray-50 to-white hover:from-gray-100 hover:to-gray-50 transition-all"
+        className="w-full flex flex-col gap-2 px-4 py-3 bg-gradient-to-r from-gray-50 to-white hover:from-gray-100 hover:to-gray-50 transition-all"
       >
-        <div className="flex items-center gap-3">
-          <ChevronDownIcon isOpen={isExpanded} className="w-5 h-5 text-gray-400" />
-          <span className="text-sm font-semibold text-gray-800">{section.name}</span>
-          <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
-            {stats.completedEvents}/{stats.totalEvents} events
-          </span>
+        {/* Top row: Title and basic info */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <ChevronDownIcon isOpen={isExpanded} className="w-5 h-5 text-gray-400" />
+            <span className="text-sm font-semibold text-gray-800">{section.name}</span>
+            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
+              {stats.completedEvents}/{stats.totalEvents} events
+            </span>
+          </div>
+
+          {/* Completion percentage */}
+          <div className="flex items-center gap-2">
+            <span className={`text-sm font-bold ${
+              stats.completedEvents === stats.totalEvents ? 'text-emerald-600' : 'text-blue-600'
+            }`}>
+              {stats.totalEvents > 0 ? Math.round((stats.completedEvents / stats.totalEvents) * 100) : 0}%
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-4 text-xs">
-          <div className="hidden sm:flex items-center gap-4">
+        {/* Bottom row: Time stats and progress bar */}
+        <div className="flex items-center gap-4 pl-8">
+          {/* Progress Bar */}
+          <div className="flex-1 max-w-md">
+            <SegmentedProgressBar
+              planned={stats.totalPlanned}
+              executed={stats.totalExecuted}
+              credited={stats.totalCredited}
+              extended={stats.totalExtended}
+              compact
+            />
+          </div>
+
+          {/* Time Stats */}
+          <div className="hidden sm:flex items-center gap-3 text-xs">
             <div className="flex items-center gap-1.5">
-              <ClockIcon className="w-3.5 h-3.5 text-gray-400" />
-              <span className="text-gray-500">Planned:</span>
-              <span className="font-semibold text-gray-700">{formatTimeShort(stats.totalPlanned)}</span>
+              <ClockIcon className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-gray-500">Plan:</span>
+              <span className="font-mono font-semibold text-slate-700">{formatTime(stats.totalPlanned)}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <CheckCircleIcon className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="text-gray-500">Credited:</span>
-              <span className="font-semibold text-emerald-600">{formatTimeShort(stats.totalCredited)}</span>
+              <PlayIcon className="w-3.5 h-3.5 text-blue-500" />
+              <span className="text-gray-500">Exec:</span>
+              <span className="font-mono font-semibold text-blue-600">{formatTime(stats.totalExecuted)}</span>
             </div>
+            {stats.totalCredited > 0 && (
+              <div className="flex items-center gap-1.5">
+                <CreditIcon className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="text-gray-500">Cred:</span>
+                <span className="font-mono font-semibold text-emerald-600">{formatTime(stats.totalCredited)}</span>
+              </div>
+            )}
             {stats.totalExtended > 0 && (
               <div className="flex items-center gap-1.5">
-                <AlertTriangleIcon className="w-3.5 h-3.5 text-amber-500" />
-                <span className="text-gray-500">Extended:</span>
-                <span className="font-semibold text-amber-600">+{formatTimeShort(stats.totalExtended)}</span>
+                <PlusCircleIcon className="w-3.5 h-3.5 text-amber-500" />
+                <span className="text-gray-500">Ext:</span>
+                <span className="font-mono font-semibold text-amber-600">+{formatTime(stats.totalExtended)}</span>
               </div>
             )}
           </div>
@@ -682,13 +937,35 @@ const TrainingSection = ({ section, expandedEvents, onToggleEvent }) => {
         ${isExpanded ? 'max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'}
       `}>
         <div className="p-4 space-y-2 border-t border-gray-100">
+          {/* Legend */}
+          <div className="flex items-center gap-4 px-2 py-2 text-xs text-gray-500 border-b border-gray-100 mb-3">
+            <span className="font-medium text-gray-700">Legend:</span>
+            <div className="flex items-center gap-1.5">
+              <div className={`w-3 h-3 rounded ${STAT_COLORS.executed.bar}`} />
+              <span>Executed</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className={`w-3 h-3 rounded ${STAT_COLORS.credited.bar}`} />
+              <span>Credited</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className={`w-3 h-3 rounded ${STAT_COLORS.extended.bar}`} />
+              <span>Extended</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded bg-slate-200 border border-slate-300" />
+              <span>Planned (target)</span>
+            </div>
+          </div>
+
           {/* Table Header */}
-          <div className="hidden md:flex items-center gap-3 px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+          <div className="hidden lg:flex items-center gap-3 px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
             <div className="w-5" />
             <div className="flex-1">Training Event</div>
-            <div className="w-[70px] text-center">Planned</div>
-            <div className="w-[70px] text-center">Credited</div>
-            <div className="w-[70px] text-center">Extended</div>
+            <div className="w-[72px] text-center">Planned</div>
+            <div className="w-[72px] text-center">Executed</div>
+            <div className="w-[72px] text-center">Credited</div>
+            <div className="w-[72px] text-center">Extended</div>
             <div className="w-8 text-center">Grade</div>
             <div className="w-24 text-center">Status</div>
             <div className="w-[50px] text-center">Bookings</div>
@@ -738,29 +1015,48 @@ const TrainingFootprintView = ({
   // Calculate overall stats
   const overallStats = useMemo(() => {
     let totalPlanned = 0;
+    let totalExecuted = 0;
     let totalCredited = 0;
     let totalExtended = 0;
     let totalEvents = 0;
     let completedEvents = 0;
 
     sections.forEach(section => {
+      totalCredited += section.creditedTime || 0;
+
       section.events.forEach(event => {
         const bookings = event.bookings || [];
         const plannedTime = event.plannedTime || 120;
+        const creditedTime = event.creditedTime || 0;
         const passedBookings = bookings.filter(b => b.grade >= 4).length;
-        const actualTime = bookings.length * plannedTime;
+        const executedTime = bookings.reduce((sum, b) => sum + (b.executedTime || 0), 0);
+        const requiredTime = Math.max(0, plannedTime - creditedTime);
 
         totalEvents++;
         totalPlanned += plannedTime;
+        totalExecuted += executedTime;
+        totalCredited += creditedTime;
+
         if (passedBookings > 0) {
-          totalCredited += plannedTime;
           completedEvents++;
+          totalExtended += Math.max(0, executedTime - requiredTime);
         }
-        totalExtended += Math.max(0, actualTime - plannedTime);
       });
     });
 
-    return { totalPlanned, totalCredited, totalExtended, totalEvents, completedEvents };
+    const totalTime = totalExecuted + totalCredited;
+    const completionPercent = totalEvents > 0 ? Math.round((completedEvents / totalEvents) * 100) : 0;
+
+    return {
+      totalPlanned,
+      totalExecuted,
+      totalCredited,
+      totalExtended,
+      totalTime,
+      totalEvents,
+      completedEvents,
+      completionPercent,
+    };
   }, [sections]);
 
   return (
@@ -825,37 +1121,51 @@ const TrainingFootprintView = ({
 
         {/* Overall Summary Card */}
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+            {/* Left: Event Progress */}
+            <div className="flex items-center gap-4">
               <div>
                 <div className="text-xs text-blue-600 font-medium uppercase tracking-wide">Training Progress</div>
                 <div className="text-2xl font-bold text-blue-900">
                   {overallStats.completedEvents}/{overallStats.totalEvents} Events
                 </div>
               </div>
-              <div className="h-12 w-px bg-blue-200" />
-              <div className="flex items-center gap-6">
-                <div className="text-center">
-                  <div className="text-[10px] text-gray-500 uppercase">Total Planned</div>
-                  <div className="text-lg font-bold text-gray-700">{formatTimeShort(overallStats.totalPlanned)}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-[10px] text-emerald-600 uppercase">Total Credited</div>
-                  <div className="text-lg font-bold text-emerald-600">{formatTimeShort(overallStats.totalCredited)}</div>
-                </div>
-                {overallStats.totalExtended > 0 && (
-                  <div className="text-center">
-                    <div className="text-[10px] text-amber-600 uppercase">Extra Time (Repeats)</div>
-                    <div className="text-lg font-bold text-amber-600">+{formatTimeShort(overallStats.totalExtended)}</div>
-                  </div>
-                )}
-              </div>
+              <div className="h-12 w-px bg-blue-200 hidden sm:block" />
             </div>
-            <div className="hidden md:flex items-center gap-3">
+
+            {/* Center: Time Stats */}
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-3 mb-3">
+                <StatChip label="Planned" value={formatTime(overallStats.totalPlanned)} type="planned" />
+                <StatChip label="Executed" value={formatTime(overallStats.totalExecuted)} type="executed" />
+                <StatChip label="Credited" value={formatTime(overallStats.totalCredited)} type="credited" />
+                {overallStats.totalExtended > 0 && (
+                  <StatChip label="Extended" value={formatTime(overallStats.totalExtended)} type="extended" showPlus />
+                )}
+                <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-md bg-purple-50 border border-purple-200">
+                  <span className="text-[10px] font-medium text-purple-600 uppercase tracking-wide">Total</span>
+                  <span className="font-mono font-semibold text-purple-600 text-sm">
+                    {formatTime(overallStats.totalTime)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Progress Bar with Legend */}
+              <SegmentedProgressBar
+                planned={overallStats.totalPlanned}
+                executed={overallStats.totalExecuted}
+                credited={overallStats.totalCredited}
+                extended={overallStats.totalExtended}
+                showLegend
+              />
+            </div>
+
+            {/* Right: Completion Circle */}
+            <div className="hidden md:flex items-center gap-3 pl-4 border-l border-blue-200">
               <div className="text-right">
                 <div className="text-xs text-gray-500">Completion</div>
                 <div className="text-xl font-bold text-blue-600">
-                  {Math.round((overallStats.completedEvents / overallStats.totalEvents) * 100)}%
+                  {overallStats.completionPercent}%
                 </div>
               </div>
               <div className="w-16 h-16 relative">
@@ -876,7 +1186,7 @@ const TrainingFootprintView = ({
                     stroke="#3b82f6"
                     strokeWidth="6"
                     strokeLinecap="round"
-                    strokeDasharray={`${(overallStats.completedEvents / overallStats.totalEvents) * 176} 176`}
+                    strokeDasharray={`${(overallStats.completionPercent / 100) * 176} 176`}
                   />
                 </svg>
               </div>
