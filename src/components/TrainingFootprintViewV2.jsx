@@ -566,7 +566,8 @@ const ObjectiveMetricChip = ({
   executed,
   credited = 0,
   compact = false,
-  showTarget = true
+  showTarget = true,
+  hideLabel = false
 }) => {
   const total = executed + credited;
   const isComplete = total >= target && target > 0;
@@ -580,11 +581,13 @@ const ObjectiveMetricChip = ({
       flex items-center gap-2 px-2 py-1 rounded-md border
       ${isComplete ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}
     `}>
-      <div className="flex items-center gap-1">
-        <span className={`text-[9px] font-semibold uppercase tracking-wider ${isComplete ? 'text-emerald-600' : 'text-slate-500'}`}>
-          {compact ? shortLabel : label}
-        </span>
-      </div>
+      {!hideLabel && (
+        <div className="flex items-center gap-1">
+          <span className={`text-[9px] font-semibold uppercase tracking-wider ${isComplete ? 'text-emerald-600' : 'text-slate-500'}`}>
+            {compact ? shortLabel : label}
+          </span>
+        </div>
+      )}
       <div className="flex items-center gap-1">
         <span className={`font-mono text-xs font-semibold ${isComplete ? 'text-emerald-700' : 'text-slate-700'}`}>
           {formatTime(total)}
@@ -958,6 +961,7 @@ const TrainingEventRowV2 = ({ event, isExpanded, onToggle }) => {
           executed={stats.flightTime.executed}
           credited={stats.flightTime.credited}
           compact
+          hideLabel
         />
 
         {/* Solo Time Objective (only show if target > 0) */}
@@ -969,6 +973,7 @@ const TrainingEventRowV2 = ({ event, isExpanded, onToggle }) => {
             executed={stats.soloTime.executed}
             credited={stats.soloTime.credited}
             compact
+            hideLabel
           />
         ) : (
           <div className="text-center text-gray-300 text-xs">—</div>
