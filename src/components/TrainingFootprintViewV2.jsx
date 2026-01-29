@@ -486,9 +486,30 @@ const SegmentedProgressBarV2 = ({
   const plannedPercent = maxValue > 0 ? (planned / maxValue) * 100 : 0;
   const completionPercent = planned > 0 ? Math.round((total / planned) * 100) : 0;
 
+  // Build comprehensive tooltip
+  const statusText = isTargetReached
+    ? `✓ TARGET REACHED (${completionPercent}%)`
+    : `IN PROGRESS (${completionPercent}% of target)`;
+
+  const colorExplanation = isTargetReached
+    ? 'Green = Target met or exceeded'
+    : 'Blue = Target not yet reached';
+
+  const breakdownLines = [
+    `Executed: ${formatTime(executed)}`,
+    credited > 0 ? `Credited: ${formatTime(credited)}` : null,
+    extended > 0 ? `Extended: +${formatTime(extended)}` : null,
+    `Target: ${formatTime(planned)}`,
+  ].filter(Boolean).join('\n');
+
+  const fullTooltip = `${statusText}\n${colorExplanation}\n\n${breakdownLines}`;
+
   return (
     <div className={`${className}`}>
-      <div className={`relative w-full ${compact ? 'h-2' : 'h-3'} bg-slate-100 rounded-full overflow-hidden`}>
+      <div
+        className={`relative w-full ${compact ? 'h-2' : 'h-3'} bg-slate-100 rounded-full overflow-hidden cursor-help`}
+        title={fullTooltip}
+      >
         {/* Planned indicator line */}
         {total < planned && (
           <div
@@ -503,21 +524,18 @@ const SegmentedProgressBarV2 = ({
             <div
               className={`${colors.executed.bar} h-full transition-all duration-300`}
               style={{ width: `${executedPercent}%` }}
-              title={`Executed: ${formatTime(executed)}`}
             />
           )}
           {credited > 0 && (
             <div
               className={`${colors.credited.bar} h-full transition-all duration-300`}
               style={{ width: `${creditedPercent}%` }}
-              title={`Credited: ${formatTime(credited)}`}
             />
           )}
           {extended > 0 && (
             <div
               className={`${colors.extended.bar} h-full transition-all duration-300`}
               style={{ width: `${extendedPercent}%` }}
-              title={`Extended: ${formatTime(extended)}`}
             />
           )}
         </div>
